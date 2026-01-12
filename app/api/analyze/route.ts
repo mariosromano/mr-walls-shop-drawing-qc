@@ -120,6 +120,23 @@ export async function POST(request: NextRequest) {
       contextNote += ' This has CORNERS - check butt joint dimension adjustments.';
     }
 
+    // Build the message content with proper typing
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const messageContent: any[] = [
+      {
+        type: 'document',
+        source: {
+          type: 'base64',
+          media_type: 'application/pdf',
+          data: base64,
+        },
+      },
+      {
+        type: 'text',
+        text: `${CHECKLIST_PROMPT}${contextNote ? '\n\nPROJECT CONTEXT:' + contextNote : ''}`,
+      },
+    ];
+
     // Call Claude with the PDF
     const response = await anthropic.messages.create({
       model: 'claude-sonnet-4-20250514',
@@ -127,20 +144,7 @@ export async function POST(request: NextRequest) {
       messages: [
         {
           role: 'user',
-          content: [
-            {
-              type: 'document',
-              source: {
-                type: 'base64',
-                media_type: 'application/pdf',
-                data: base64,
-              },
-            },
-            {
-              type: 'text',
-              text: `${CHECKLIST_PROMPT}${contextNote ? '\n\nPROJECT CONTEXT:' + contextNote : ''}`,
-            },
-          ],
+          content: messageContent,
         },
       ],
     });
