@@ -12,7 +12,7 @@ const CHECKLIST_PROMPT = `You are an expert quality control reviewer for M|R Wal
 
 ### 1. SPELLING ERRORS - Look for these exact typos Carlo catches:
 - "Existig" → "Existing"
-- "supllying" → "supplying"  
+- "supllying" → "supplying"
 - "exisitng" → "existing"
 - "Bakclight" → "Backlight"
 - "removility" → "removability"
@@ -25,19 +25,15 @@ const CHECKLIST_PROMPT = `You are an expert quality control reviewer for M|R Wal
 - "Design: TBD"
 - Any field showing "TBD"
 
-### 3. TITLE BLOCK - Verify:
-- "Shop Drawing" as drawing type
-- "VERSION 1" or "VERSION 2" (with space)
-- "AS NOTED" in scale field
-- Project name present
-- Project location (City, State)
-- M|R Sales Rep with name, phone, email
-- Drawn By initials
-- Contents field
-- Page numbers (SD1, SD2, etc.)
+### 3. MISSING REQUIRED ELEMENTS:
+- M|R Walls logo present
+- Project name clearly stated
+- Drawing type identified (Elevation, Plan, Detail)
+- Version/revision number
+- Scale indicated
+- Date
 
-### 4. ELEVATION & DETAILS - Check:
-- Border/fade callout (e.g., "3/4" border, grooves fade to full material thickness")
+### 4. MATERIAL/FINISH CALLOUTS:
 - Material: "Corian Solid Surface" or "Solid Surface"
 - Color specified
 - Panel seam note if applicable
@@ -61,7 +57,10 @@ const CHECKLIST_PROMPT = `You are an expert quality control reviewer for M|R Wal
 - Consistent dimension/leader text sizes?
 - Consistent scales on same page?
 
-## RESPONSE FORMAT - Return ONLY valid JSON:
+## RESPONSE FORMAT
+
+IMPORTANT: Return ONLY valid JSON. No text before or after. No markdown code blocks. Start directly with { and end with }
+
 {
   "overallStatus": "pass" | "warning" | "fail",
   "summary": "Brief 1-2 sentence summary of findings",
@@ -74,22 +73,7 @@ const CHECKLIST_PROMPT = `You are an expert quality control reviewer for M|R Wal
   "passed": [
     {"id": "unique_id", "label": "Check Name", "status": "pass", "notes": "Brief confirmation"}
   ],
-  "manualReview": [
-    {"id": "unique_id", "label": "Item Name", "status": "pending", "notes": "What needs human verification"}
-  ],
-  "projectType": {
-    "isBacklit": true,
-    "hasCutouts": false,
-    "hasCorners": true,
-    "hasLogos": false
-  },
-  "extractedInfo": {
-    "projectName": "Detected project name",
-    "location": "City, State",
-    "version": "VERSION 1",
-    "drawnBy": "XX",
-    "pageCount": 4
-  }
+  "pageCount": 4
 }
 
 Be thorough. Focus on issues Carlo would catch. If something fails, explain exactly what's wrong and where.`;
@@ -133,7 +117,7 @@ export async function POST(request: NextRequest) {
       },
       {
         type: 'text',
-        text: `${CHECKLIST_PROMPT}${contextNote ? '\n\nPROJECT CONTEXT:' + contextNote : ''}`,
+        text: `${CHECKLIST_PROMPT}${contextNote ? '\n\nPROJECT CONTEXT:' + contextNote : ''}\n\nREMEMBER: Output ONLY the JSON object. No other text.`,
       },
     ];
 
@@ -155,14 +139,38 @@ export async function POST(request: NextRequest) {
       throw new Error('No text response from Claude');
     }
 
-    // Parse JSON from response
-    const jsonMatch = textContent.text.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
-      console.error('Claude response:', textContent.text);
-      throw new Error('Could not parse JSON response from Claude');
+    // Parse JSON from response - try multiple extraction methods
+    let results;
+    const responseText = textContent.text.trim();
+    
+    // Method 1: Try parsing the entire response as JSON (ideal case)
+    if (responseText.startsWith('{')) {
+      try {
+        results = JSON.parse(responseText);
+      } catch {
+        // Fall through to method 2
+      }
     }
-
-    const results = JSON.parse(jsonMatch[0]);
+    
+    // Method 2: Extract JSON from response using regex
+    if (!results) {
+      const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        try {
+          results = JSON.parse(jsonMatch[0]);
+        } catch (parseError) {
+          console.error('JSON parse error:', parseError);
+          console.error('Attempted to parse:', jsonMatch[0].substring(0, 500));
+          throw new Error('Invalid JSON in Claude response');
+        }
+      }
+    }
+    
+    // Method 3: If still no results, log and throw helpful error
+    if (!results) {
+      console.error('Claude response (first 1000 chars):', responseText.substring(0, 1000));
+      throw new Error(`Could not parse JSON from Claude response. Response started with: "${responseText.substring(0, 100)}"`);
+    }
 
     return NextResponse.json({
       success: true,
