@@ -78,6 +78,9 @@ IMPORTANT: Return ONLY valid JSON. No text before or after. No markdown code blo
 
 Be thorough. Focus on issues Carlo would catch. If something fails, explain exactly what's wrong and where.`;
 
+// Allow longer execution time for large PDFs
+export const maxDuration = 60;
+
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
@@ -86,6 +89,15 @@ export async function POST(request: NextRequest) {
 
     if (!file) {
       return NextResponse.json({ error: 'No PDF file provided' }, { status: 400 });
+    }
+
+    const fileSizeMB = file.size / (1024 * 1024);
+    
+    // Warn if file is large (over 5MB base64 encoded becomes ~6.7MB)
+    if (fileSizeMB > 5) {
+      return NextResponse.json({ 
+        error: `PDF is ${fileSizeMB.toFixed(1)}MB which is too large. Please compress to under 5MB using smallpdf.com or ilovepdf.com before uploading.`
+      }, { status: 413 });
     }
 
     // Convert file to base64
@@ -179,8 +191,21 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error('Analysis error:', error);
+    
+    const errorMessage = error instanceof Error ? error.message : 'Analysis failed';
+    
+    // Handle Anthropic API errors for large files
+    if (errorMessage.toLowerCase().includes('forbidden') || 
+        errorMessage.toLowerCase().includes('too large') ||
+        errorMessage.toLowerCase().includes('request entity too large')) {
+      return NextResponse.json(
+        { error: 'PDF too large for AI processing. Please compress to under 5MB using smallpdf.com or ilovepdf.com' },
+        { status: 413 }
+      );
+    }
+    
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Analysis failed' },
+      { error: errorMessage },
       { status: 500 }
     );
   }
