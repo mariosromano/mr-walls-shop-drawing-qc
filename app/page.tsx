@@ -60,6 +60,9 @@ interface ProjectAnswers {
   hasLogos: boolean;
 }
 
+// Maximum file size in bytes (5MB)
+const MAX_FILE_SIZE = 5 * 1024 * 1024;
+
 const QUESTIONS = [
   { id: 'isBacklit', label: 'Is this a backlit wall?', icon: Lightbulb, desc: 'LEDs behind the panels' },
   { id: 'hasCutouts', label: 'Does it have cutouts?', icon: Square, desc: 'TV openings, pass-throughs' },
@@ -77,7 +80,6 @@ function StatusBadge({ status, critical }: { status: Status; critical?: boolean 
   };
   const config = configs[status] || configs.pending;
   const Icon = config.icon;
-
   return (
     <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${config.bg} ${config.text}`}>
       <Icon size={12} />
@@ -100,24 +102,43 @@ export default function ShopDrawingQC() {
   const [progress, setProgress] = useState(0);
   const [statusText, setStatusText] = useState('');
 
+  const validateFile = (uploadedFile: File): string | null => {
+    if (uploadedFile.type !== 'application/pdf') {
+      return 'Please upload a PDF file';
+    }
+    if (uploadedFile.size > MAX_FILE_SIZE) {
+      const sizeMB = (uploadedFile.size / 1024 / 1024).toFixed(1);
+      return `PDF is ${sizeMB}MB which exceeds the 5MB limit. Please compress it using smallpdf.com or ilovepdf.com`;
+    }
+    return null;
+  };
+
   const handleFileUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const uploadedFile = e.target.files?.[0];
-    if (uploadedFile && uploadedFile.type === 'application/pdf') {
-      setFile(uploadedFile);
-      setError(null);
-    } else {
-      setError('Please upload a PDF file');
+    if (uploadedFile) {
+      const validationError = validateFile(uploadedFile);
+      if (validationError) {
+        setError(validationError);
+        setFile(null);
+      } else {
+        setFile(uploadedFile);
+        setError(null);
+      }
     }
   }, []);
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     const droppedFile = e.dataTransfer.files?.[0];
-    if (droppedFile && droppedFile.type === 'application/pdf') {
-      setFile(droppedFile);
-      setError(null);
-    } else {
-      setError('Please upload a PDF file');
+    if (droppedFile) {
+      const validationError = validateFile(droppedFile);
+      if (validationError) {
+        setError(validationError);
+        setFile(null);
+      } else {
+        setFile(droppedFile);
+        setError(null);
+      }
     }
   }, []);
 
@@ -127,6 +148,7 @@ export default function ShopDrawingQC() {
 
   const runAnalysis = async () => {
     if (!file) return;
+
     setStep('analyzing');
     setProgress(0);
     setError(null);
@@ -206,11 +228,28 @@ export default function ShopDrawingQC() {
 
           {/* Error */}
           {error && (
-            <div className="mb-6 p-4 bg-red-500/10 border border-red-500/30 rounded-xl flex items-center gap-3 text-red-400">
-              <AlertCircle size={20} />
-              <span>{error}</span>
+            <div className="mb-6 p-4 bg-red-500/10 border border-red-500/30 rounded-xl flex items-start gap-3 text-red-400">
+              <AlertCircle size={20} className="flex-shrink-0 mt-0.5" />
+              <div>
+                <span>{error}</span>
+                {error.includes('compress') && (
+                  <div className="mt-2 text-sm">
+                    <a href="https://smallpdf.com/compress-pdf" target="_blank" rel="noopener noreferrer" className="underline hover:text-red-300">
+                      → Open SmallPDF Compressor
+                    </a>
+                  </div>
+                )}
+              </div>
             </div>
           )}
+
+          {/* File Size Notice */}
+          <div className="mb-6 p-3 bg-slate-800/50 border border-slate-700 rounded-xl text-sm text-slate-400">
+            <strong className="text-slate-300">Max file size: 5MB</strong> — Compress larger PDFs at{' '}
+            <a href="https://smallpdf.com/compress-pdf" target="_blank" rel="noopener noreferrer" className="text-cyan-400 underline">
+              smallpdf.com
+            </a>
+          </div>
 
           {/* Upload Area */}
           <div
@@ -222,7 +261,6 @@ export default function ShopDrawingQC() {
             onClick={() => document.getElementById('fileInput')?.click()}
           >
             <input id="fileInput" type="file" accept=".pdf" onChange={handleFileUpload} className="hidden" />
-
             {file ? (
               <div className="space-y-4">
                 <div className="w-20 h-20 mx-auto bg-cyan-500/20 rounded-2xl flex items-center justify-center">
@@ -252,8 +290,7 @@ export default function ShopDrawingQC() {
               onClick={() => setStep('questions')}
               className="w-full mt-6 py-4 bg-cyan-500 hover:bg-cyan-400 text-slate-900 font-bold text-lg rounded-xl transition-colors flex items-center justify-center gap-2"
             >
-              Continue
-              <ChevronRight size={22} />
+              Continue <ChevronRight size={22} />
             </button>
           )}
 
@@ -318,7 +355,10 @@ export default function ShopDrawingQC() {
             <button onClick={() => setStep('upload')} className="px-8 py-4 border border-slate-600 text-slate-300 font-medium rounded-xl hover:bg-slate-800 transition-colors">
               Back
             </button>
-            <button onClick={runAnalysis} className="flex-1 py-4 bg-cyan-500 hover:bg-cyan-400 text-slate-900 font-bold text-lg rounded-xl transition-colors flex items-center justify-center gap-2">
+            <button
+              onClick={runAnalysis}
+              className="flex-1 py-4 bg-cyan-500 hover:bg-cyan-400 text-slate-900 font-bold text-lg rounded-xl transition-colors flex items-center justify-center gap-2"
+            >
               <Zap size={22} />
               Run Analysis
             </button>
