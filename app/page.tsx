@@ -249,8 +249,21 @@ export default function ShopDrawingQC() {
       clearInterval(progressInterval);
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Analysis failed');
+        let errorMessage = 'Analysis failed';
+        const contentType = response.headers.get('content-type');
+
+        if (contentType && contentType.includes('application/json')) {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorMessage;
+        } else {
+          const text = await response.text();
+          if (text.toLowerCase().includes('request entity too large') || response.status === 413) {
+            errorMessage = 'PDF is too large. Please compress to under 3MB using smallpdf.com with "Extreme Compression".';
+          } else {
+            errorMessage = text || errorMessage;
+          }
+        }
+        throw new Error(errorMessage);
       }
 
       const data = await response.json();
