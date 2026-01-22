@@ -93,7 +93,12 @@ async function compressPDF(file: File): Promise<{ compressedFile: File; original
     useObjectStreams: true,
   });
 
-  const compressedFile = new File([compressedBytes], file.name, { type: 'application/pdf' });
+  // Convert Uint8Array to ArrayBuffer then to File
+  const outputBuffer = compressedBytes.buffer.slice(
+    compressedBytes.byteOffset,
+    compressedBytes.byteOffset + compressedBytes.byteLength
+  ) as ArrayBuffer;
+  const compressedFile = new File([outputBuffer], file.name, { type: 'application/pdf' });
 
   return {
     compressedFile,
