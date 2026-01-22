@@ -1,27 +1,26 @@
-import { put } from '@vercel/blob';
+import { handleUpload, type HandleUploadBody } from '@vercel/blob/client';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(request: NextRequest) {
+  const body = (await request.json()) as HandleUploadBody;
+
   try {
-    const formData = await request.formData();
-    const file = formData.get('pdf') as File;
-
-    if (!file) {
-      return NextResponse.json({ error: 'No file provided' }, { status: 400 });
-    }
-
-    // Upload to Vercel Blob
-    const blob = await put(file.name, file, {
-      access: 'public',
-      addRandomSuffix: true,
+    const jsonResponse = await handleUpload({
+      body,
+      request,
+      onBeforeGenerateToken: async () => {
+        // Authenticate user here if needed
+        return {
+          allowedContentTypes: ['application/pdf'],
+          maximumSizeInBytes: 50 * 1024 * 1024, // 50MB max
+        };
+      },
+      onUploadCompleted: async ({ blob }) => {
+        console.log('Upload completed:', blob.url);
+      },
     });
 
-    return NextResponse.json({
-      success: true,
-      url: blob.url,
-      filename: file.name,
-      size: file.size,
-    });
+    return NextResponse.json(jsonResponse);
   } catch (error) {
     console.error('Upload error:', error);
     return NextResponse.json(

@@ -2,6 +2,7 @@
 
 import React, { useState, useCallback } from 'react';
 import { PDFDocument } from 'pdf-lib';
+import { upload } from '@vercel/blob/client';
 import {
   Upload,
   FileText,
@@ -221,22 +222,14 @@ export default function ShopDrawingQC() {
     setStatusText('Uploading PDF to storage...');
 
     try {
-      // Step 1: Upload to Vercel Blob
+      // Step 1: Upload directly to Vercel Blob (client-side, bypasses body limit)
       setProgress(10);
-      const formData = new FormData();
-      formData.append('pdf', file);
 
-      const uploadResponse = await fetch('/api/upload', {
-        method: 'POST',
-        body: formData,
+      const blob = await upload(file.name, file, {
+        access: 'public',
+        handleUploadUrl: '/api/upload',
       });
 
-      if (!uploadResponse.ok) {
-        const uploadError = await uploadResponse.json();
-        throw new Error(uploadError.error || 'Upload failed');
-      }
-
-      const uploadData = await uploadResponse.json();
       setProgress(30);
       setStatusText('Analyzing with Claude AI...');
 
@@ -245,7 +238,7 @@ export default function ShopDrawingQC() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          blobUrl: uploadData.url,
+          blobUrl: blob.url,
           filename: file.name,
           projectType: projectAnswers,
         }),
