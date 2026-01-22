@@ -61,10 +61,10 @@ interface ProjectAnswers {
   hasLogos: boolean;
 }
 
-// Target compression size (2MB) - try to compress anything over this
-const TARGET_SIZE = 2 * 1024 * 1024;
-// Maximum file size in bytes (3.5MB) - matches API limit
-const MAX_FILE_SIZE = 3.5 * 1024 * 1024;
+// Target compression size (8MB) - try to compress anything over this
+const TARGET_SIZE = 8 * 1024 * 1024;
+// Maximum file size in bytes (11MB)
+const MAX_FILE_SIZE = 11 * 1024 * 1024;
 
 const QUESTIONS = [
   { id: 'isBacklit', label: 'Is this a backlit wall?', icon: Lightbulb, desc: 'LEDs behind the panels' },
@@ -172,7 +172,7 @@ export default function ShopDrawingQC() {
         // Check if compressed file is still too large
         if (result.compressedFile.size > MAX_FILE_SIZE) {
           const sizeMB = (result.compressedFile.size / 1024 / 1024).toFixed(1);
-          setError(`PDF is ${sizeMB}MB after compression (max 3.5MB). Please compress at smallpdf.com first, then upload here.`);
+          setError(`PDF is ${sizeMB}MB after compression (max 11MB). Please compress at smallpdf.com first, then upload here.`);
           setFile(null);
         } else {
           setFile(result.compressedFile);
@@ -258,7 +258,7 @@ export default function ShopDrawingQC() {
         } else {
           const text = await response.text();
           if (text.toLowerCase().includes('request entity too large') || response.status === 413) {
-            errorMessage = 'PDF is too large. Please compress to under 3MB using smallpdf.com with "Extreme Compression".';
+            errorMessage = 'PDF is too large. Please compress to under 11MB using smallpdf.com.';
           } else {
             errorMessage = text || errorMessage;
           }
@@ -346,11 +346,7 @@ export default function ShopDrawingQC() {
 
           {/* File Size Notice */}
           <div className="mb-6 p-3 bg-slate-800/50 border border-slate-700 rounded-xl text-sm text-slate-400">
-            <strong className="text-slate-300">Max file size: 3.5MB</strong> — For larger files, compress first at{' '}
-            <a href="https://smallpdf.com/compress-pdf" target="_blank" rel="noopener noreferrer" className="text-cyan-400 underline">
-              smallpdf.com
-            </a>{' '}
-            (use "Extreme Compression")
+            <strong className="text-slate-300">Max file size: 11MB</strong> — Most shop drawings should work without compression
           </div>
 
           {/* Upload Area */}

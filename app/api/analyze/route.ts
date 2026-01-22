@@ -79,7 +79,7 @@ Be thorough. Focus on issues Carlo would catch. If something fails, explain exac
 
 export const maxDuration = 60;
 
-const MAX_FILE_SIZE_MB = 3.5;
+const MAX_FILE_SIZE_MB = 11;
 const MAX_FILE_SIZE = MAX_FILE_SIZE_MB * 1024 * 1024;
 
 export async function POST(request: NextRequest) {
@@ -186,7 +186,7 @@ export async function POST(request: NextRequest) {
         errorMessage.toLowerCase().includes('413') ||
         errorMessage.toLowerCase().includes('forbidden')) {
       return NextResponse.json(
-        { error: 'PDF still too large for AI processing. Please compress to under 3.5MB using smallpdf.com with "Extreme Compression" option.' },
+        { error: 'PDF too large for processing. Please compress to under 11MB using smallpdf.com.' },
         { status: 413 }
       );
     }
