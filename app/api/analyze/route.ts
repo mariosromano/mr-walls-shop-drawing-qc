@@ -79,38 +79,32 @@ Be thorough. Focus on issues Carlo would catch. If something fails, explain exac
 
 export const maxDuration = 60;
 
-const MAX_FILE_SIZE_MB = 11;
-const MAX_FILE_SIZE = MAX_FILE_SIZE_MB * 1024 * 1024;
-
 export async function POST(request: NextRequest) {
   try {
-    const formData = await request.formData();
-    const file = formData.get('pdf') as File;
-    const projectType = JSON.parse(formData.get('projectType') as string || '{}');
+    const body = await request.json();
+    const { blobUrl, filename, projectType } = body;
 
-    if (!file) {
-      return NextResponse.json({ error: 'No PDF file provided' }, { status: 400 });
+    if (!blobUrl) {
+      return NextResponse.json({ error: 'No blob URL provided' }, { status: 400 });
     }
 
-    const fileSizeMB = file.size / (1024 * 1024);
-
-    if (file.size > MAX_FILE_SIZE) {
-      return NextResponse.json({
-        error: `PDF is ${fileSizeMB.toFixed(1)}MB but max is ${MAX_FILE_SIZE_MB}MB. Please compress further at smallpdf.com (choose "Extreme Compression").`
-      }, { status: 413 });
+    // Fetch PDF from Vercel Blob
+    const pdfResponse = await fetch(blobUrl);
+    if (!pdfResponse.ok) {
+      throw new Error('Failed to fetch PDF from storage');
     }
 
-    const bytes = await file.arrayBuffer();
-    const base64 = Buffer.from(bytes).toString('base64');
+    const pdfBuffer = await pdfResponse.arrayBuffer();
+    const base64 = Buffer.from(pdfBuffer).toString('base64');
 
     let contextNote = '';
-    if (projectType.isBacklit) {
+    if (projectType?.isBacklit) {
       contextNote += ' This is a BACKLIT wall - check all backlit requirements carefully.';
     }
-    if (projectType.hasCutouts) {
+    if (projectType?.hasCutouts) {
       contextNote += ' This has CUTOUTS - verify cutout border and fabrication notes.';
     }
-    if (projectType.hasCorners) {
+    if (projectType?.hasCorners) {
       contextNote += ' This has CORNERS - check butt joint dimension adjustments.';
     }
 
@@ -173,7 +167,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      filename: file.name,
+      filename: filename || 'document.pdf',
       results,
     });
   } catch (error) {
@@ -181,13 +175,11 @@ export async function POST(request: NextRequest) {
 
     const errorMessage = error instanceof Error ? error.message : 'Analysis failed';
 
-    if (errorMessage.toLowerCase().includes('request entity too large') ||
-        errorMessage.toLowerCase().includes('too large') ||
-        errorMessage.toLowerCase().includes('413') ||
-        errorMessage.toLowerCase().includes('forbidden')) {
+    if (errorMessage.toLowerCase().includes('credit balance') ||
+        errorMessage.toLowerCase().includes('billing')) {
       return NextResponse.json(
-        { error: 'PDF too large for processing. Please compress to under 11MB using smallpdf.com.' },
-        { status: 413 }
+        { error: 'Anthropic API credit balance is too low. Please add credits at console.anthropic.com.' },
+        { status: 402 }
       );
     }
 

@@ -61,10 +61,10 @@ interface ProjectAnswers {
   hasLogos: boolean;
 }
 
-// Target compression size (8MB) - try to compress anything over this
-const TARGET_SIZE = 8 * 1024 * 1024;
-// Maximum file size in bytes (11MB)
-const MAX_FILE_SIZE = 11 * 1024 * 1024;
+// Target compression size (25MB) - try to compress anything over this
+const TARGET_SIZE = 25 * 1024 * 1024;
+// Maximum file size in bytes (32MB) - Anthropic's limit for PDFs
+const MAX_FILE_SIZE = 32 * 1024 * 1024;
 
 const QUESTIONS = [
   { id: 'isBacklit', label: 'Is this a backlit wall?', icon: Lightbulb, desc: 'LEDs behind the panels' },
@@ -172,7 +172,7 @@ export default function ShopDrawingQC() {
         // Check if compressed file is still too large
         if (result.compressedFile.size > MAX_FILE_SIZE) {
           const sizeMB = (result.compressedFile.size / 1024 / 1024).toFixed(1);
-          setError(`PDF is ${sizeMB}MB after compression (max 11MB). Please compress at smallpdf.com first, then upload here.`);
+          setError(`PDF is ${sizeMB}MB after compression (max 32MB). Please compress at smallpdf.com first.`);
           setFile(null);
         } else {
           setFile(result.compressedFile);
@@ -217,61 +217,52 @@ export default function ShopDrawingQC() {
     setStep('analyzing');
     setProgress(0);
     setError(null);
-
-    const progressSteps = [
-      { p: 10, s: 'Uploading PDF...' },
-      { p: 25, s: 'Extracting pages...' },
-      { p: 45, s: 'Analyzing with Claude AI...' },
-      { p: 70, s: 'Checking spelling & formatting...' },
-      { p: 85, s: 'Validating requirements...' },
-      { p: 95, s: 'Generating report...' },
-    ];
-
-    let stepIndex = 0;
-    const progressInterval = setInterval(() => {
-      if (stepIndex < progressSteps.length) {
-        setProgress(progressSteps[stepIndex].p);
-        setStatusText(progressSteps[stepIndex].s);
-        stepIndex++;
-      }
-    }, 1200);
+    setStatusText('Uploading PDF to storage...');
 
     try {
+      // Step 1: Upload to Vercel Blob
+      setProgress(10);
       const formData = new FormData();
       formData.append('pdf', file);
-      formData.append('projectType', JSON.stringify(projectAnswers));
 
-      const response = await fetch('/api/analyze', {
+      const uploadResponse = await fetch('/api/upload', {
         method: 'POST',
         body: formData,
       });
 
-      clearInterval(progressInterval);
-
-      if (!response.ok) {
-        let errorMessage = 'Analysis failed';
-        const contentType = response.headers.get('content-type');
-
-        if (contentType && contentType.includes('application/json')) {
-          const errorData = await response.json();
-          errorMessage = errorData.error || errorMessage;
-        } else {
-          const text = await response.text();
-          if (text.toLowerCase().includes('request entity too large') || response.status === 413) {
-            errorMessage = 'PDF is too large. Please compress to under 11MB using smallpdf.com.';
-          } else {
-            errorMessage = text || errorMessage;
-          }
-        }
-        throw new Error(errorMessage);
+      if (!uploadResponse.ok) {
+        const uploadError = await uploadResponse.json();
+        throw new Error(uploadError.error || 'Upload failed');
       }
 
-      const data = await response.json();
+      const uploadData = await uploadResponse.json();
+      setProgress(30);
+      setStatusText('Analyzing with Claude AI...');
+
+      // Step 2: Analyze using blob URL
+      const analyzeResponse = await fetch('/api/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          blobUrl: uploadData.url,
+          filename: file.name,
+          projectType: projectAnswers,
+        }),
+      });
+
+      setProgress(70);
+      setStatusText('Processing results...');
+
+      if (!analyzeResponse.ok) {
+        const errorData = await analyzeResponse.json();
+        throw new Error(errorData.error || 'Analysis failed');
+      }
+
+      const data = await analyzeResponse.json();
       setResults(data.results);
       setProgress(100);
       setStep('results');
     } catch (err) {
-      clearInterval(progressInterval);
       setError(err instanceof Error ? err.message : 'Analysis failed');
       setStep('upload');
     }
@@ -346,7 +337,7 @@ export default function ShopDrawingQC() {
 
           {/* File Size Notice */}
           <div className="mb-6 p-3 bg-slate-800/50 border border-slate-700 rounded-xl text-sm text-slate-400">
-            <strong className="text-slate-300">Max file size: 11MB</strong> — Most shop drawings should work without compression
+            <strong className="text-slate-300">Max file size: 32MB</strong> — Large shop drawings supported
           </div>
 
           {/* Upload Area */}
