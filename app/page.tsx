@@ -61,10 +61,10 @@ interface ProjectAnswers {
   hasLogos: boolean;
 }
 
-// Target compression size (3MB)
-const TARGET_SIZE = 3 * 1024 * 1024;
-// Maximum file size in bytes (5MB)
-const MAX_FILE_SIZE = 5 * 1024 * 1024;
+// Target compression size (2MB) - try to compress anything over this
+const TARGET_SIZE = 2 * 1024 * 1024;
+// Maximum file size in bytes (3.5MB) - matches API limit
+const MAX_FILE_SIZE = 3.5 * 1024 * 1024;
 
 const QUESTIONS = [
   { id: 'isBacklit', label: 'Is this a backlit wall?', icon: Lightbulb, desc: 'LEDs behind the panels' },
@@ -172,7 +172,7 @@ export default function ShopDrawingQC() {
         // Check if compressed file is still too large
         if (result.compressedFile.size > MAX_FILE_SIZE) {
           const sizeMB = (result.compressedFile.size / 1024 / 1024).toFixed(1);
-          setError(`After compression, PDF is still ${sizeMB}MB. Please compress further using smallpdf.com`);
+          setError(`PDF is ${sizeMB}MB after compression (max 3.5MB). Please compress at smallpdf.com first, then upload here.`);
           setFile(null);
         } else {
           setFile(result.compressedFile);
@@ -346,10 +346,11 @@ export default function ShopDrawingQC() {
 
           {/* File Size Notice */}
           <div className="mb-6 p-3 bg-slate-800/50 border border-slate-700 rounded-xl text-sm text-slate-400">
-            <strong className="text-slate-300">Auto-compression enabled</strong> — Large PDFs will be automatically compressed. For very large files, use{' '}
+            <strong className="text-slate-300">Max file size: 3.5MB</strong> — For larger files, compress first at{' '}
             <a href="https://smallpdf.com/compress-pdf" target="_blank" rel="noopener noreferrer" className="text-cyan-400 underline">
               smallpdf.com
-            </a>
+            </a>{' '}
+            (use "Extreme Compression")
           </div>
 
           {/* Upload Area */}
