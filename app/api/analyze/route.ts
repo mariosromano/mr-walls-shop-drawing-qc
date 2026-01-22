@@ -5,7 +5,6 @@ const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
 });
 
-// M|R Walls Shop Drawing QC Checklist - Based on Carlo's actual revision patterns
 const CHECKLIST_PROMPT = `You are an expert quality control reviewer for M|R Walls shop drawings. Analyze this PDF and identify issues BEFORE they get to Carlo for review.
 
 ## CRITICAL CHECKS (Must Pass)
@@ -78,8 +77,10 @@ IMPORTANT: Return ONLY valid JSON. No text before or after. No markdown code blo
 
 Be thorough. Focus on issues Carlo would catch. If something fails, explain exactly what's wrong and where.`;
 
-// Allow longer execution time for large PDFs
 export const maxDuration = 60;
+
+const MAX_FILE_SIZE_MB = 3.5;
+const MAX_FILE_SIZE = MAX_FILE_SIZE_MB * 1024 * 1024;
 
 export async function POST(request: NextRequest) {
   try {
@@ -92,19 +93,16 @@ export async function POST(request: NextRequest) {
     }
 
     const fileSizeMB = file.size / (1024 * 1024);
-    
-    // Warn if file is large (over 5MB base64 encoded becomes ~6.7MB)
-    if (fileSizeMB > 5) {
-      return NextResponse.json({ 
-        error: `PDF is ${fileSizeMB.toFixed(1)}MB which is too large. Please compress to under 5MB using smallpdf.com or ilovepdf.com before uploading.`
+
+    if (file.size > MAX_FILE_SIZE) {
+      return NextResponse.json({
+        error: `PDF is ${fileSizeMB.toFixed(1)}MB but max is ${MAX_FILE_SIZE_MB}MB. Please compress further at smallpdf.com (choose "Extreme Compression").`
       }, { status: 413 });
     }
 
-    // Convert file to base64
     const bytes = await file.arrayBuffer();
     const base64 = Buffer.from(bytes).toString('base64');
 
-    // Build context
     let contextNote = '';
     if (projectType.isBacklit) {
       contextNote += ' This is a BACKLIT wall - check all backlit requirements carefully.';
@@ -116,8 +114,6 @@ export async function POST(request: NextRequest) {
       contextNote += ' This has CORNERS - check butt joint dimension adjustments.';
     }
 
-    // Build the message content with proper typing
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const messageContent: any[] = [
       {
         type: 'document',
@@ -133,7 +129,6 @@ export async function POST(request: NextRequest) {
       },
     ];
 
-    // Call Claude with the PDF
     const response = await anthropic.messages.create({
       model: 'claude-sonnet-4-20250514',
       max_tokens: 4096,
@@ -145,26 +140,21 @@ export async function POST(request: NextRequest) {
       ],
     });
 
-    // Extract the text response
     const textContent = response.content.find((block) => block.type === 'text');
     if (!textContent || textContent.type !== 'text') {
       throw new Error('No text response from Claude');
     }
 
-    // Parse JSON from response - try multiple extraction methods
     let results;
     const responseText = textContent.text.trim();
-    
-    // Method 1: Try parsing the entire response as JSON (ideal case)
+
     if (responseText.startsWith('{')) {
       try {
         results = JSON.parse(responseText);
       } catch {
-        // Fall through to method 2
       }
     }
-    
-    // Method 2: Extract JSON from response using regex
+
     if (!results) {
       const jsonMatch = responseText.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
@@ -172,16 +162,13 @@ export async function POST(request: NextRequest) {
           results = JSON.parse(jsonMatch[0]);
         } catch (parseError) {
           console.error('JSON parse error:', parseError);
-          console.error('Attempted to parse:', jsonMatch[0].substring(0, 500));
           throw new Error('Invalid JSON in Claude response');
         }
       }
     }
-    
-    // Method 3: If still no results, log and throw helpful error
+
     if (!results) {
-      console.error('Claude response (first 1000 chars):', responseText.substring(0, 1000));
-      throw new Error(`Could not parse JSON from Claude response. Response started with: "${responseText.substring(0, 100)}"`);
+      throw new Error(`Could not parse JSON from Claude response.`);
     }
 
     return NextResponse.json({
@@ -191,19 +178,19 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error('Analysis error:', error);
-    
+
     const errorMessage = error instanceof Error ? error.message : 'Analysis failed';
-    
-    // Handle Anthropic API errors for large files
-    if (errorMessage.toLowerCase().includes('forbidden') || 
+
+    if (errorMessage.toLowerCase().includes('request entity too large') ||
         errorMessage.toLowerCase().includes('too large') ||
-        errorMessage.toLowerCase().includes('request entity too large')) {
+        errorMessage.toLowerCase().includes('413') ||
+        errorMessage.toLowerCase().includes('forbidden')) {
       return NextResponse.json(
-        { error: 'PDF too large for AI processing. Please compress to under 5MB using smallpdf.com or ilovepdf.com' },
+        { error: 'PDF still too large for AI processing. Please compress to under 3.5MB using smallpdf.com with "Extreme Compression" option.' },
         { status: 413 }
       );
     }
-    
+
     return NextResponse.json(
       { error: errorMessage },
       { status: 500 }

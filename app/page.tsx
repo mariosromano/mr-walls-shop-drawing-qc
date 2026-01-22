@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useCallback } from 'react';
+import { PDFDocument } from 'pdf-lib';
 import {
   Upload,
   FileText,
@@ -60,6 +61,8 @@ interface ProjectAnswers {
   hasLogos: boolean;
 }
 
+// Target compression size (3MB)
+const TARGET_SIZE = 3 * 1024 * 1024;
 // Maximum file size in bytes (5MB)
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 
@@ -69,6 +72,35 @@ const QUESTIONS = [
   { id: 'hasCorners', label: 'Inside or outside corners?', icon: CornerDownRight, desc: 'Wall wraps around' },
   { id: 'hasLogos', label: 'Logos or inlays?', icon: Building2, desc: 'Custom engravings' },
 ];
+
+async function compressPDF(file: File): Promise<{ compressedFile: File; originalSize: number; compressedSize: number }> {
+  const originalSize = file.size;
+  const arrayBuffer = await file.arrayBuffer();
+
+  // Load the PDF
+  const pdfDoc = await PDFDocument.load(arrayBuffer);
+
+  // Remove metadata to reduce size
+  pdfDoc.setTitle('');
+  pdfDoc.setAuthor('');
+  pdfDoc.setSubject('');
+  pdfDoc.setKeywords([]);
+  pdfDoc.setProducer('');
+  pdfDoc.setCreator('');
+
+  // Save with object streams enabled for better compression
+  const compressedBytes = await pdfDoc.save({
+    useObjectStreams: true,
+  });
+
+  const compressedFile = new File([compressedBytes], file.name, { type: 'application/pdf' });
+
+  return {
+    compressedFile,
+    originalSize,
+    compressedSize: compressedFile.size,
+  };
+}
 
 function StatusBadge({ status, critical }: { status: Status; critical?: boolean }) {
   const configs = {
@@ -101,29 +133,64 @@ export default function ShopDrawingQC() {
   const [error, setError] = useState<string | null>(null);
   const [progress, setProgress] = useState(0);
   const [statusText, setStatusText] = useState('');
+  const [isCompressing, setIsCompressing] = useState(false);
+  const [compressionResult, setCompressionResult] = useState<{ original: number; compressed: number } | null>(null);
 
   const validateFile = (uploadedFile: File): string | null => {
     if (uploadedFile.type !== 'application/pdf') {
       return 'Please upload a PDF file';
     }
-    if (uploadedFile.size > MAX_FILE_SIZE) {
-      const sizeMB = (uploadedFile.size / 1024 / 1024).toFixed(1);
-      return `PDF is ${sizeMB}MB which exceeds the 5MB limit. Please compress it using smallpdf.com or ilovepdf.com`;
-    }
     return null;
+  };
+
+  const processFile = async (uploadedFile: File) => {
+    const validationError = validateFile(uploadedFile);
+    if (validationError) {
+      setError(validationError);
+      setFile(null);
+      return;
+    }
+
+    // If file is larger than target size, compress it
+    if (uploadedFile.size > TARGET_SIZE) {
+      setIsCompressing(true);
+      setError(null);
+      setCompressionResult(null);
+
+      try {
+        const result = await compressPDF(uploadedFile);
+        setCompressionResult({
+          original: result.originalSize,
+          compressed: result.compressedSize,
+        });
+
+        // Check if compressed file is still too large
+        if (result.compressedFile.size > MAX_FILE_SIZE) {
+          const sizeMB = (result.compressedFile.size / 1024 / 1024).toFixed(1);
+          setError(`After compression, PDF is still ${sizeMB}MB. Please compress further using smallpdf.com`);
+          setFile(null);
+        } else {
+          setFile(result.compressedFile);
+          setError(null);
+        }
+      } catch (err) {
+        console.error('Compression error:', err);
+        setError('Failed to compress PDF. Please try compressing manually at smallpdf.com');
+        setFile(null);
+      } finally {
+        setIsCompressing(false);
+      }
+    } else {
+      setFile(uploadedFile);
+      setError(null);
+      setCompressionResult(null);
+    }
   };
 
   const handleFileUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const uploadedFile = e.target.files?.[0];
     if (uploadedFile) {
-      const validationError = validateFile(uploadedFile);
-      if (validationError) {
-        setError(validationError);
-        setFile(null);
-      } else {
-        setFile(uploadedFile);
-        setError(null);
-      }
+      processFile(uploadedFile);
     }
   }, []);
 
@@ -131,14 +198,7 @@ export default function ShopDrawingQC() {
     e.preventDefault();
     const droppedFile = e.dataTransfer.files?.[0];
     if (droppedFile) {
-      const validationError = validateFile(droppedFile);
-      if (validationError) {
-        setError(validationError);
-        setFile(null);
-      } else {
-        setFile(droppedFile);
-        setError(null);
-      }
+      processFile(droppedFile);
     }
   }, []);
 
@@ -206,6 +266,11 @@ export default function ShopDrawingQC() {
     setError(null);
     setProgress(0);
     setProjectAnswers({ isBacklit: false, hasCutouts: false, hasCorners: false, hasLogos: false });
+    setCompressionResult(null);
+  };
+
+  const formatSize = (bytes: number): string => {
+    return (bytes / (1024 * 1024)).toFixed(1) + 'MB';
   };
 
   // ==================== UPLOAD STEP ====================
@@ -243,9 +308,27 @@ export default function ShopDrawingQC() {
             </div>
           )}
 
+          {/* Compression Status */}
+          {isCompressing && (
+            <div className="mb-6 p-4 bg-cyan-500/10 border border-cyan-500/30 rounded-xl flex items-center gap-3 text-cyan-400">
+              <Loader2 size={20} className="animate-spin" />
+              <span>Compressing PDF...</span>
+            </div>
+          )}
+
+          {/* Compression Result */}
+          {compressionResult && !error && (
+            <div className="mb-6 p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-xl flex items-center gap-3 text-emerald-400">
+              <CheckCircle size={20} />
+              <span>
+                Compressed: {formatSize(compressionResult.original)} → {formatSize(compressionResult.compressed)}
+              </span>
+            </div>
+          )}
+
           {/* File Size Notice */}
           <div className="mb-6 p-3 bg-slate-800/50 border border-slate-700 rounded-xl text-sm text-slate-400">
-            <strong className="text-slate-300">Max file size: 5MB</strong> — Compress larger PDFs at{' '}
+            <strong className="text-slate-300">Auto-compression enabled</strong> — Large PDFs will be automatically compressed. For very large files, use{' '}
             <a href="https://smallpdf.com/compress-pdf" target="_blank" rel="noopener noreferrer" className="text-cyan-400 underline">
               smallpdf.com
             </a>
@@ -254,14 +337,24 @@ export default function ShopDrawingQC() {
           {/* Upload Area */}
           <div
             className={`border-2 border-dashed rounded-2xl p-16 text-center transition-all cursor-pointer ${
-              file ? 'border-cyan-500 bg-cyan-500/5' : 'border-slate-600 hover:border-cyan-500/50 hover:bg-slate-800/30'
+              file ? 'border-cyan-500 bg-cyan-500/5' : isCompressing ? 'border-cyan-500/50 bg-cyan-500/5' : 'border-slate-600 hover:border-cyan-500/50 hover:bg-slate-800/30'
             }`}
             onDrop={handleDrop}
             onDragOver={(e) => e.preventDefault()}
-            onClick={() => document.getElementById('fileInput')?.click()}
+            onClick={() => !isCompressing && document.getElementById('fileInput')?.click()}
           >
-            <input id="fileInput" type="file" accept=".pdf" onChange={handleFileUpload} className="hidden" />
-            {file ? (
+            <input id="fileInput" type="file" accept=".pdf" onChange={handleFileUpload} className="hidden" disabled={isCompressing} />
+            {isCompressing ? (
+              <div className="space-y-4">
+                <div className="w-20 h-20 mx-auto bg-cyan-500/20 rounded-2xl flex items-center justify-center">
+                  <Loader2 className="text-cyan-400 animate-spin" size={40} />
+                </div>
+                <div>
+                  <p className="text-xl font-semibold text-white">Compressing PDF...</p>
+                  <p className="text-sm text-slate-400 mt-1">This may take a moment</p>
+                </div>
+              </div>
+            ) : file ? (
               <div className="space-y-4">
                 <div className="w-20 h-20 mx-auto bg-cyan-500/20 rounded-2xl flex items-center justify-center">
                   <FileText className="text-cyan-400" size={40} />
@@ -285,7 +378,7 @@ export default function ShopDrawingQC() {
           </div>
 
           {/* Continue Button */}
-          {file && (
+          {file && !isCompressing && (
             <button
               onClick={() => setStep('questions')}
               className="w-full mt-6 py-4 bg-cyan-500 hover:bg-cyan-400 text-slate-900 font-bold text-lg rounded-xl transition-colors flex items-center justify-center gap-2"
