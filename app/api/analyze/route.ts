@@ -77,7 +77,8 @@ IMPORTANT: Return ONLY valid JSON. No text before or after. No markdown code blo
 
 Be thorough. Focus on issues Carlo would catch. If something fails, explain exactly what's wrong and where.`;
 
-export const maxDuration = 60;
+// Increased timeout for large PDFs
+export const maxDuration = 120;
 
 export async function POST(request: NextRequest) {
   try {
@@ -95,6 +96,10 @@ export async function POST(request: NextRequest) {
     }
 
     const pdfBuffer = await pdfResponse.arrayBuffer();
+    const fileSizeMB = pdfBuffer.byteLength / (1024 * 1024);
+
+    console.log(`Processing PDF: ${filename}, Size: ${fileSizeMB.toFixed(2)}MB`);
+
     const base64 = Buffer.from(pdfBuffer).toString('base64');
 
     let contextNote = '';
@@ -175,11 +180,23 @@ export async function POST(request: NextRequest) {
 
     const errorMessage = error instanceof Error ? error.message : 'Analysis failed';
 
+    // Handle credit/billing errors
     if (errorMessage.toLowerCase().includes('credit balance') ||
         errorMessage.toLowerCase().includes('billing')) {
       return NextResponse.json(
         { error: 'Anthropic API credit balance is too low. Please add credits at console.anthropic.com.' },
         { status: 402 }
+      );
+    }
+
+    // Handle PDF processing errors - likely too large or complex
+    if (errorMessage.toLowerCase().includes('could not process pdf') ||
+        errorMessage.toLowerCase().includes('invalid_request_error')) {
+      return NextResponse.json(
+        {
+          error: 'PDF too large or complex to process. Please compress the PDF (reduce image quality to 150 DPI) and try again. In Preview: File → Export → Quartz Filter → Reduce File Size.'
+        },
+        { status: 400 }
       );
     }
 
