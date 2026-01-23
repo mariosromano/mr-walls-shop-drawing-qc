@@ -174,7 +174,7 @@ export default function ShopDrawingQC() {
         // Check if compressed file is still too large
         if (result.compressedFile.size > MAX_FILE_SIZE) {
           const sizeMB = (result.compressedFile.size / 1024 / 1024).toFixed(1);
-          setError(`PDF is still ${sizeMB}MB after compression. Please compress manually: Mac Preview → Export → Quartz Filter → Reduce File Size, or use smallpdf.com`);
+          setError(`PDF is still ${sizeMB}MB after compression. Please compress manually: Adobe Acrobat → File → Save As Other → Reduced Size PDF`);
           setFile(null);
         } else {
           setFile(result.compressedFile);
@@ -341,7 +341,7 @@ export default function ShopDrawingQC() {
             </div>
             <div className="text-xs text-gray-500 space-y-1">
               <p><strong className="text-gray-400">If upload fails:</strong> Compress your PDF before uploading</p>
-              <p><strong className="text-gray-400">Mac:</strong> Preview → File → Export → Quartz Filter → Reduce File Size</p>
+              <p><strong className="text-gray-400">Adobe Acrobat:</strong> File → Save As Other → Reduced Size PDF</p>
               <p><strong className="text-gray-400">Online:</strong> smallpdf.com or ilovepdf.com</p>
             </div>
           </div>

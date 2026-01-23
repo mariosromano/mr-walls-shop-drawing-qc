@@ -194,7 +194,7 @@ export async function POST(request: NextRequest) {
         errorMessage.toLowerCase().includes('invalid_request_error')) {
       return NextResponse.json(
         {
-          error: 'PDF too large or complex to process. Please compress the PDF (reduce image quality to 150 DPI) and try again. In Preview: File → Export → Quartz Filter → Reduce File Size.'
+          error: 'PDF too large or complex to process. Please compress in Adobe Acrobat: File → Save As Other → Reduced Size PDF, then try again.'
         },
         { status: 400 }
       );
