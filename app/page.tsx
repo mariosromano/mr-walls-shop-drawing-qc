@@ -174,7 +174,7 @@ export default function ShopDrawingQC() {
         // Check if compressed file is still too large
         if (result.compressedFile.size > MAX_FILE_SIZE) {
           const sizeMB = (result.compressedFile.size / 1024 / 1024).toFixed(1);
-          setError(`PDF is ${sizeMB}MB after compression (max 32MB). Please compress at smallpdf.com first.`);
+          setError(`PDF is still ${sizeMB}MB after compression. Please compress manually: Mac Preview → Export → Quartz Filter → Reduce File Size, or use smallpdf.com`);
           setFile(null);
         } else {
           setFile(result.compressedFile);
@@ -332,9 +332,18 @@ export default function ShopDrawingQC() {
             </div>
           )}
 
-          {/* File Size Notice */}
-          <div className="mb-6 p-3 bg-gray-900/50 border border-gray-800 rounded-xl text-sm text-gray-400">
-            <strong className="text-orange-400">Max file size: 32MB</strong> — Large shop drawings supported
+          {/* File Size & Compression Guidelines */}
+          <div className="mb-6 p-4 bg-gray-900/50 border border-gray-800 rounded-xl text-sm text-gray-400 space-y-2">
+            <div className="flex items-center gap-2">
+              <strong className="text-orange-400">Recommended: Under 15MB</strong>
+              <span className="text-gray-500">|</span>
+              <span>Max upload: 32MB</span>
+            </div>
+            <div className="text-xs text-gray-500 space-y-1">
+              <p><strong className="text-gray-400">If upload fails:</strong> Compress your PDF before uploading</p>
+              <p><strong className="text-gray-400">Mac:</strong> Preview → File → Export → Quartz Filter → Reduce File Size</p>
+              <p><strong className="text-gray-400">Online:</strong> smallpdf.com or ilovepdf.com</p>
+            </div>
           </div>
 
           {/* Upload Area */}
