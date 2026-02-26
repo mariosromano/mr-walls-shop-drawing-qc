@@ -5,77 +5,85 @@ const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
 });
 
-const CHECKLIST_PROMPT = `You are an expert quality control reviewer for M|R Walls shop drawings. Analyze this PDF and identify issues BEFORE they get to Carlo for review.
+const SYSTEM_PROMPT = `You are a deterministic quality control checker for M|R Walls shop drawings. Your job is to evaluate each check independently using exact, binary criteria. Given identical inputs, you must always produce identical outputs. Do not add subjective commentary or vary your language between runs. Use the exact check labels provided. Only report what you can verify from the document.`;
 
-## CRITICAL CHECKS (Must Pass)
+const CHECKLIST_PROMPT = `Analyze this shop drawing PDF against the following checklist. Each check is PASS or FAIL — no interpretation needed.
 
-### 1. SPELLING ERRORS - Look for these exact typos Carlo catches:
-- "Existig" → "Existing"
-- "supllying" → "supplying"
-- "exisitng" → "existing"
-- "Bakclight" → "Backlight"
-- "removility" → "removability"
-- "seperate" → "separate"
-- Any other spelling errors in callouts, notes, or labels
+IMPORTANT: Even if the user did NOT indicate this is a backlit wall, visually inspect the drawings for evidence of backlighting (LED strips, light diffusion gaps, wiring diagrams, backlight callouts, translucent materials, references to LEDs or lighting behind panels). If you detect ANY backlit features, apply ALL backlit requirements checks regardless of user selection.
 
-### 2. TBD/PLACEHOLDER TEXT - Flag any:
-- "PRODUCTION #: TBD"
-- "MRQ: TBD"
-- "Design: TBD"
-- Any field showing "TBD"
+## CHECKLIST
 
-### 3. MISSING REQUIRED ELEMENTS:
-- M|R Walls logo present
-- Project name clearly stated
-- Drawing type identified (Elevation, Plan, Detail)
-- Version/revision number
-- Scale indicated
-- Date
+### 1. PDF FILENAME FORMAT
+- The filename provided must match this pattern: MRQ-####_ProjectName_DrawingType_v#.pdf
+- Example: MRQ-1234_HiltonLobby_Elevation_v2.pdf
+- FAIL if the filename does not follow this convention (missing MRQ prefix, no version number, wrong separators, etc.)
 
-### 4. MATERIAL/FINISH CALLOUTS:
-- Material: "Corian Solid Surface" or "Solid Surface"
-- Color specified
-- Panel seam note if applicable
-- Scale consistency across similar details
+### 2. SPELLING ERRORS
+- Check ALL text on every page for misspellings
+- Known common typos: "Existig"→"Existing", "supllying"→"supplying", "exisitng"→"existing", "Bakclight"→"Backlight", "removility"→"removability", "seperate"→"separate"
+- FAIL if any spelling error is found. List each error with the incorrect word, correct word, and page number.
 
-### 5. BACKLIT REQUIREMENTS (if backlit project):
-- "REQUIRED: M|R Wall needs 3" gap for proper LED light diffusion"
-- Ceiling gap for LED access
-- "removable for LED access" OR "glued with silicone for removability"
-- Wiring diagram with LED strip spacing
-- Component list: receivers, drivers, amplifiers, LED rolls with counts
-- "Total Wattage: XXXW"
-- "Full set of install diagrams will be provided once final shop drawings have been approved"
+### 3. TBD/PLACEHOLDER TEXT
+- Search every page for "TBD" in any field (PRODUCTION #, MRQ, Design, or any other)
+- FAIL if any TBD placeholder is found. List each instance with field name and page number.
 
-### 6. SITUATIONAL:
-- Cutouts: Border notes, fabrication note
-- Corners: Butt joint dimension adjustments
+### 4. MISSING REQUIRED ELEMENTS — check each individually:
+- M|R Walls logo: PASS if present on title page, FAIL if missing
+- Project name: PASS if clearly stated, FAIL if missing
+- Drawing type (Elevation, Plan, Detail): PASS if identified, FAIL if missing
+- Version/revision number: PASS if present, FAIL if missing
+- Scale: PASS if indicated, FAIL if missing
+- Date: PASS if present, FAIL if missing
 
-### 7. LAYOUT:
-- Any page overcrowded?
-- Consistent dimension/leader text sizes?
-- Consistent scales on same page?
+### 5. MATERIAL/FINISH CALLOUTS
+- Material must specify "Corian Solid Surface" or "Solid Surface": PASS/FAIL
+- Color must be specified: PASS/FAIL
+- Panel seam note present if multiple panels shown: PASS/FAIL/N/A
+- Scales consistent across similar details on same page: PASS/FAIL
+
+### 6. BACKLIT REQUIREMENTS (check if project is backlit OR if backlit features detected):
+- "REQUIRED: M|R Wall needs 3" gap for proper LED light diffusion" note present: PASS/FAIL
+- LED access method shown — either a 3" gap OR an access panel: PASS/FAIL
+- "removable for LED access" OR "access panel for LED maintenance" OR "glued with silicone for removability" note present: PASS/FAIL
+- Wiring diagram with LED strip spacing: PASS/FAIL
+- Component list (receivers, drivers, amplifiers, LED rolls with counts): PASS/FAIL
+- "Total Wattage: XXXW" present: PASS/FAIL
+- "Full set of install diagrams will be provided once final shop drawings have been approved" note present: PASS/FAIL
+- If NOT a backlit project and no backlit features detected: mark all as N/A
+
+### 7. SITUATIONAL
+- If cutouts present: border notes and fabrication note: PASS/FAIL/N/A
+- If corners present: butt joint dimension adjustments noted: PASS/FAIL/N/A
+
+### 8. LAYOUT QUALITY
+- Pages not overcrowded (text/details legible, not overlapping): PASS/FAIL
+- Dimension and leader text sizes consistent: PASS/FAIL
+- Scales consistent on same page: PASS/FAIL
 
 ## RESPONSE FORMAT
 
-IMPORTANT: Return ONLY valid JSON. No text before or after. No markdown code blocks. Start directly with { and end with }
+Return ONLY valid JSON. No text before or after. No markdown code blocks. Start with { and end with }
 
 {
   "overallStatus": "pass" | "warning" | "fail",
-  "summary": "Brief 1-2 sentence summary of findings",
+  "summary": "1-2 sentence factual summary",
   "criticalIssues": [
-    {"id": "unique_id", "label": "Issue Name", "status": "fail", "notes": "What's wrong and where", "page": 1}
+    {"id": "check_id", "label": "Check Name", "status": "fail", "notes": "Exact finding with location", "page": 1}
   ],
   "warnings": [
-    {"id": "unique_id", "label": "Warning Name", "status": "warning", "notes": "What to review", "page": 2}
+    {"id": "check_id", "label": "Check Name", "status": "warning", "notes": "What needs review", "page": 2}
   ],
   "passed": [
-    {"id": "unique_id", "label": "Check Name", "status": "pass", "notes": "Brief confirmation"}
+    {"id": "check_id", "label": "Check Name", "status": "pass", "notes": "Confirmed present/correct"}
   ],
   "pageCount": 4
 }
 
-Be thorough. Focus on issues Carlo would catch. If something fails, explain exactly what's wrong and where.`;
+Rules:
+- overallStatus is "fail" if ANY critical issue exists, "warning" if only warnings, "pass" if all checks pass
+- Use consistent check IDs: spelling, tbd, filename, logo, project_name, drawing_type, version, scale, date, material, color, seam, scale_consistency, led_gap, led_access, led_removable, led_wiring, led_components, led_wattage, led_install_note, cutout_notes, corner_joints, layout_crowding, layout_text, layout_scales
+- Do not invent issues that are not evidenced in the document
+- For N/A checks (e.g. backlit checks on non-backlit project), omit them entirely from the response`;
 
 // Increased timeout for large PDFs
 export const maxDuration = 120;
@@ -124,13 +132,15 @@ export async function POST(request: NextRequest) {
       },
       {
         type: 'text',
-        text: `${CHECKLIST_PROMPT}${contextNote ? '\n\nPROJECT CONTEXT:' + contextNote : ''}\n\nREMEMBER: Output ONLY the JSON object. No other text.`,
+        text: `FILENAME: ${filename || 'unknown'}\n\n${CHECKLIST_PROMPT}${contextNote ? '\n\nPROJECT CONTEXT:' + contextNote : ''}\n\nOutput ONLY the JSON object. No other text.`,
       },
     ];
 
     const response = await anthropic.messages.create({
       model: 'claude-sonnet-4-20250514',
       max_tokens: 4096,
+      temperature: 0,
+      system: SYSTEM_PROMPT,
       messages: [
         {
           role: 'user',

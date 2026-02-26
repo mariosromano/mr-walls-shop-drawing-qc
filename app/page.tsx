@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { PDFDocument } from 'pdf-lib';
 import { upload } from '@vercel/blob/client';
 import {
@@ -22,7 +22,10 @@ import {
   Zap,
   AlertCircle,
   Smile,
+  User,
 } from 'lucide-react';
+
+const REVIEWERS = ['Carlo', 'Kamila', 'Samantha'];
 
 type Status = 'pass' | 'warning' | 'fail' | 'pending' | 'skipped';
 
@@ -142,6 +145,22 @@ export default function ShopDrawingQC() {
   const [statusText, setStatusText] = useState('');
   const [isCompressing, setIsCompressing] = useState(false);
   const [compressionResult, setCompressionResult] = useState<{ original: number; compressed: number } | null>(null);
+  const [showReviewerPicker, setShowReviewerPicker] = useState(false);
+  const [submittedTo, setSubmittedTo] = useState<string | null>(null);
+  const reviewerPickerRef = useRef<HTMLDivElement>(null);
+
+  // Close reviewer picker when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (reviewerPickerRef.current && !reviewerPickerRef.current.contains(event.target as Node)) {
+        setShowReviewerPicker(false);
+      }
+    }
+    if (showReviewerPicker) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [showReviewerPicker]);
 
   const validateFile = (uploadedFile: File): string | null => {
     if (uploadedFile.type !== 'application/pdf') {
@@ -270,6 +289,8 @@ export default function ShopDrawingQC() {
     setProgress(0);
     setProjectAnswers({ isBacklit: false, hasCutouts: false, hasCorners: false, hasLogos: false });
     setCompressionResult(null);
+    setShowReviewerPicker(false);
+    setSubmittedTo(null);
   };
 
   const formatSize = (bytes: number): string => {
@@ -289,7 +310,7 @@ export default function ShopDrawingQC() {
               </div>
               <div className="text-left">
                 <h1 className="text-3xl font-bold text-white">Shop Drawing QC</h1>
-                <p className="text-gray-400">Pre-flight check before Carlo</p>
+                <p className="text-gray-400">Self-Review Aid</p>
               </div>
               <div className="ml-2">
                 <Smile className="text-pink-400" size={32} />
@@ -485,10 +506,6 @@ export default function ShopDrawingQC() {
             <h2 className="text-2xl font-bold text-white mb-2">Analyzing Drawing</h2>
             <p className="text-gray-400 text-lg">{statusText}</p>
           </div>
-          <div className="w-full bg-gray-800 rounded-full h-3 overflow-hidden">
-            <div className="h-full bg-gradient-to-r from-orange-500 to-pink-500 transition-all duration-500" style={{ width: `${progress}%` }} />
-          </div>
-          <p className="text-gray-500">{progress}%</p>
         </div>
       </div>
     );
@@ -565,15 +582,46 @@ export default function ShopDrawingQC() {
                   </>
                 )}
               </div>
-              <button
-                disabled={totalIssues > 0}
-                className={`px-8 py-3 rounded-xl font-bold text-lg flex items-center gap-2 transition-colors ${
-                  totalIssues > 0 ? 'bg-gray-800 text-gray-500 cursor-not-allowed' : 'bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-400 hover:to-pink-400 text-black'
-                }`}
-              >
-                <Send size={20} />
-                Ready for Carlo
-              </button>
+              <div className="relative" ref={reviewerPickerRef}>
+                {submittedTo ? (
+                  <div className="px-8 py-3 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center gap-2">
+                    <CheckCircle size={20} className="text-emerald-400" />
+                    <span className="font-bold text-lg text-emerald-400">Submitted to {submittedTo}</span>
+                  </div>
+                ) : (
+                  <button
+                    disabled={totalIssues > 0}
+                    onClick={() => setShowReviewerPicker(!showReviewerPicker)}
+                    className={`px-8 py-3 rounded-xl font-bold text-lg flex items-center gap-2 transition-colors ${
+                      totalIssues > 0 ? 'bg-gray-800 text-gray-500 cursor-not-allowed' : 'bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-400 hover:to-pink-400 text-black'
+                    }`}
+                  >
+                    <Send size={20} />
+                    Submit for Review
+                  </button>
+                )}
+
+                {showReviewerPicker && (
+                  <div className="absolute bottom-full right-0 mb-2 w-56 bg-gray-900 border border-gray-700 rounded-xl shadow-xl overflow-hidden z-10">
+                    <div className="px-4 py-2 border-b border-gray-800">
+                      <p className="text-sm text-gray-400 font-medium">Send to reviewer</p>
+                    </div>
+                    {REVIEWERS.map((reviewer) => (
+                      <button
+                        key={reviewer}
+                        onClick={() => {
+                          setSubmittedTo(reviewer);
+                          setShowReviewerPicker(false);
+                        }}
+                        className="w-full px-4 py-3 text-left text-white hover:bg-gray-800 transition-colors flex items-center gap-3"
+                      >
+                        <User size={16} className="text-gray-400" />
+                        {reviewer}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
