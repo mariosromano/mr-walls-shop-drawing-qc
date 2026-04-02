@@ -26,8 +26,8 @@ IMPORTANT: Even if the user did NOT indicate this is a backlit wall, visually in
 - FAIL if any spelling error is found. List each error with the incorrect word, correct word, and page number.
 
 ### 3. TBD/PLACEHOLDER TEXT
-- Search every page for "TBD" in any field (PRODUCTION #, MRQ, Design, or any other)
-- FAIL if any TBD placeholder is found. List each instance with field name and page number.
+- Search every page for "TBD" in any field (PRODUCTION #, MRQ, or any other) — TBD is allowed in the Design field, ignore it there
+- FAIL if any TBD placeholder is found outside the Design field. List each instance with field name and page number.
 
 ### 4. MISSING REQUIRED ELEMENTS — check each individually:
 - M|R Walls logo: PASS if present on title page, FAIL if missing
@@ -47,9 +47,6 @@ IMPORTANT: Even if the user did NOT indicate this is a backlit wall, visually in
 - "REQUIRED: M|R Wall needs 3" gap for proper LED light diffusion" note present: PASS/FAIL
 - LED access method shown — either a 3" gap OR an access panel: PASS/FAIL
 - "removable for LED access" OR "access panel for LED maintenance" OR "glued with silicone for removability" note present: PASS/FAIL
-- Wiring diagram with LED strip spacing: PASS/FAIL
-- Component list (receivers, drivers, amplifiers, LED rolls with counts): PASS/FAIL
-- "Total Wattage: XXXW" present: PASS/FAIL
 - "Full set of install diagrams will be provided once final shop drawings have been approved" note present: PASS/FAIL
 - If NOT a backlit project and no backlit features detected: mark all as N/A
 
