@@ -108,14 +108,20 @@ export async function POST(request: NextRequest) {
     const base64 = Buffer.from(pdfBuffer).toString('base64');
 
     let contextNote = '';
-    if (projectType?.isBacklit) {
-      contextNote += ' This is a BACKLIT wall - check all backlit requirements carefully.';
+    if (projectType?.isBacklit === true) {
+      contextNote += ' BACKLIT: YES — apply all backlit requirement checks.';
+    } else {
+      contextNote += ' BACKLIT: NO — the designer confirmed this is NOT a backlit wall. SKIP all backlit requirement checks entirely. Do not flag any missing LED notes, gap requirements, or access panel requirements.';
     }
     if (projectType?.hasCutouts) {
-      contextNote += ' This has CUTOUTS - verify cutout border and fabrication notes.';
+      contextNote += ' CUTOUTS: YES — verify cutout border and fabrication notes.';
+    } else {
+      contextNote += ' CUTOUTS: NO — skip cutout checks.';
     }
     if (projectType?.hasCorners) {
-      contextNote += ' This has CORNERS - check butt joint dimension adjustments.';
+      contextNote += ' CORNERS: YES — check butt joint dimension adjustments.';
+    } else {
+      contextNote += ' CORNERS: NO — skip corner checks.';
     }
 
     const messageContent: any[] = [
