@@ -16,9 +16,9 @@ IMPORTANT: Even if the user did NOT indicate this is a backlit wall, visually in
 ### 1. PDF FILENAME FORMAT
 - The filename provided must match this pattern: [MM-DD-YYYY] Project Name - Shop Drawing V#.pdf
 - Example: [04-02-2026] Rosero Garage - Shop Drawing V2.pdf
-- The date must be in brackets in MM-DD-YYYY format
-- Must end with "- Shop Drawing V#" where # is the version number
-- FAIL if the filename does not follow this convention (missing date brackets, missing version number, wrong format, etc.)
+- The date must be in brackets in MM-DD-YYYY format (e.g. [04-02-2026])
+- Must contain "Shop Drawing" followed by a version like V1, V2, -V1, -V2, etc.
+- PASS if the filename follows this convention. FAIL only if the date brackets or Shop Drawing version are completely missing.
 
 ### 2. SPELLING ERRORS
 - Check ALL text on every page for misspellings
