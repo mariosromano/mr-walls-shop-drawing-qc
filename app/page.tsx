@@ -60,10 +60,10 @@ interface AnalysisResults {
 }
 
 interface ProjectAnswers {
-  isBacklit: boolean;
-  hasCutouts: boolean;
-  hasCorners: boolean;
-  hasLogos: boolean;
+  isBacklit: boolean | null;
+  hasCutouts: boolean | null;
+  hasCorners: boolean | null;
+  hasLogos: boolean | null;
 }
 
 // Target compression size (25MB) - try to compress anything over this
@@ -134,10 +134,10 @@ export default function ShopDrawingQC() {
   const [step, setStep] = useState<'upload' | 'questions' | 'analyzing' | 'results'>('upload');
   const [file, setFile] = useState<File | null>(null);
   const [projectAnswers, setProjectAnswers] = useState<ProjectAnswers>({
-    isBacklit: false,
-    hasCutouts: false,
-    hasCorners: false,
-    hasLogos: false,
+    isBacklit: null,
+    hasCutouts: null,
+    hasCorners: null,
+    hasLogos: null,
   });
   const [results, setResults] = useState<AnalysisResults | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -232,10 +232,12 @@ export default function ShopDrawingQC() {
     }
   }, []);
 
-  const toggleAnswer = (questionId: keyof ProjectAnswers) => {
+  const setAnswer = (questionId: keyof ProjectAnswers, value: boolean) => {
     if (questionId === 'isBacklit') setBacklitAnswered(true);
-    setProjectAnswers((prev) => ({ ...prev, [questionId]: !prev[questionId] }));
+    setProjectAnswers((prev) => ({ ...prev, [questionId]: value }));
   };
+
+  const allAnswered = Object.values(projectAnswers).every((v) => v !== null);
 
   const runAnalysis = async () => {
     if (!file) return;
@@ -264,7 +266,12 @@ export default function ShopDrawingQC() {
         body: JSON.stringify({
           blobUrl: blob.url,
           filename: file.name,
-          projectType: projectAnswers,
+          projectType: {
+            isBacklit: projectAnswers.isBacklit === true,
+            hasCutouts: projectAnswers.hasCutouts === true,
+            hasCorners: projectAnswers.hasCorners === true,
+            hasLogos: projectAnswers.hasLogos === true,
+          },
         }),
       });
 
@@ -293,7 +300,7 @@ export default function ShopDrawingQC() {
     setResults(null);
     setError(null);
     setProgress(0);
-    setProjectAnswers({ isBacklit: false, hasCutouts: false, hasCorners: false, hasLogos: false });
+    setProjectAnswers({ isBacklit: null, hasCutouts: null, hasCorners: null, hasLogos: null });
     setBacklitAnswered(false);
     setCompressionResult(null);
     setShowReviewerPicker(false);
@@ -458,35 +465,48 @@ export default function ShopDrawingQC() {
         <div className="max-w-2xl mx-auto">
           <div className="text-center mb-8">
             <h2 className="text-2xl font-bold text-white mb-2">Project Details</h2>
-            <p className="text-gray-400">Answer all questions before running analysis</p>
-            {!backlitAnswered && (
-              <p className="text-orange-400 text-sm mt-2">⚠️ You must indicate whether this is a backlit wall</p>
-            )}
+            <p className="text-gray-400">All questions are required before running analysis</p>
           </div>
 
-          <div className="space-y-3 mb-8">
+          <div className="space-y-4 mb-8">
             {QUESTIONS.map((q) => {
               const Icon = q.icon;
-              const isSelected = projectAnswers[q.id as keyof ProjectAnswers];
+              const val = projectAnswers[q.id as keyof ProjectAnswers];
               return (
-                <button
+                <div
                   key={q.id}
-                  onClick={() => toggleAnswer(q.id as keyof ProjectAnswers)}
-                  className={`w-full p-5 rounded-xl border-2 transition-all flex items-center gap-4 text-left ${
-                    isSelected ? 'border-orange-500 bg-orange-500/10' : 'border-gray-800 bg-gray-900/50 hover:border-gray-700'
-                  }`}
+                  className="p-5 rounded-xl border-2 border-gray-800 bg-gray-900/50"
                 >
-                  <div className={`w-14 h-14 rounded-xl flex items-center justify-center ${isSelected ? 'bg-orange-500/20' : 'bg-gray-800/50'}`}>
-                    <Icon className={isSelected ? 'text-orange-400' : 'text-gray-400'} size={28} />
+                  <div className="flex items-center gap-4 mb-4">
+                    <div className="w-12 h-12 rounded-xl bg-gray-800/50 flex items-center justify-center">
+                      <Icon className="text-gray-400" size={24} />
+                    </div>
+                    <div>
+                      <span className="font-semibold text-white">{q.label}</span>
+                      <p className="text-sm text-gray-500">{q.desc}</p>
+                    </div>
+                    {val === null && <span className="ml-auto text-xs text-orange-400 font-medium">Required</span>}
+                    {val !== null && <CheckCircle className="ml-auto text-emerald-400" size={20} />}
                   </div>
-                  <div className="flex-1">
-                    <span className={`font-semibold text-lg ${isSelected ? 'text-white' : 'text-gray-300'}`}>{q.label}</span>
-                    <p className="text-sm text-gray-500">{q.desc}</p>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => setAnswer(q.id as keyof ProjectAnswers, true)}
+                      className={`flex-1 py-2.5 rounded-lg font-semibold text-sm transition-colors ${
+                        val === true ? 'bg-orange-500 text-black' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+                      }`}
+                    >
+                      Yes
+                    </button>
+                    <button
+                      onClick={() => setAnswer(q.id as keyof ProjectAnswers, false)}
+                      className={`flex-1 py-2.5 rounded-lg font-semibold text-sm transition-colors ${
+                        val === false ? 'bg-gray-400 text-black' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+                      }`}
+                    >
+                      No
+                    </button>
                   </div>
-                  <div className={`w-7 h-7 rounded-full border-2 flex items-center justify-center ${isSelected ? 'border-pink-500 bg-pink-500' : 'border-gray-600'}`}>
-                    {isSelected && <CheckCircle className="text-black" size={18} />}
-                  </div>
-                </button>
+                </div>
               );
             })}
           </div>
@@ -497,9 +517,9 @@ export default function ShopDrawingQC() {
             </button>
             <button
               onClick={runAnalysis}
-              disabled={!backlitAnswered}
+              disabled={!allAnswered}
               className={`flex-1 py-4 font-bold text-lg rounded-xl transition-colors flex items-center justify-center gap-2 ${
-                backlitAnswered
+                allAnswered
                   ? 'bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-400 hover:to-pink-400 text-black'
                   : 'bg-gray-800 text-gray-500 cursor-not-allowed'
               }`}
