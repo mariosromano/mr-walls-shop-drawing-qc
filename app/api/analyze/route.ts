@@ -9,8 +9,6 @@ const SYSTEM_PROMPT = `You are a deterministic quality control checker for M|R W
 
 const CHECKLIST_PROMPT = `Analyze this shop drawing PDF against the following checklist. Each check is PASS or FAIL — no interpretation needed.
 
-IMPORTANT: Even if the user did NOT indicate this is a backlit wall, visually inspect the drawings for evidence of backlighting (LED strips, light diffusion gaps, wiring diagrams, backlight callouts, translucent materials, references to LEDs or lighting behind panels). If you detect ANY backlit features, apply ALL backlit requirements checks regardless of user selection.
-
 ## CHECKLIST
 
 ### 1. PDF FILENAME FORMAT
@@ -43,7 +41,7 @@ IMPORTANT: Even if the user did NOT indicate this is a backlit wall, visually in
 - Panel seam note present if multiple panels shown: PASS/FAIL/N/A
 - Scales consistent across similar details on same page: PASS/FAIL
 
-### 6. BACKLIT REQUIREMENTS (check if project is backlit OR if backlit features detected):
+### 6. BACKLIT REQUIREMENTS (apply ONLY if the user indicated this is a backlit project — do NOT auto-detect):
 - "REQUIRED: M|R Wall needs 3" gap for proper LED light diffusion" note present: PASS/FAIL
 - LED access method shown — either a 3" gap OR an access panel: PASS/FAIL
 - "removable for LED access" OR "access panel for LED maintenance" OR "glued with silicone for removability" note present: PASS/FAIL

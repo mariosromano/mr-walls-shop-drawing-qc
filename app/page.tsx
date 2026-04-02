@@ -148,6 +148,7 @@ export default function ShopDrawingQC() {
   const [showReviewerPicker, setShowReviewerPicker] = useState(false);
   const [submittedTo, setSubmittedTo] = useState<string | null>(null);
   const [projectNameOverride, setProjectNameOverride] = useState('');
+  const [backlitAnswered, setBacklitAnswered] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const reviewerPickerRef = useRef<HTMLDivElement>(null);
@@ -232,6 +233,7 @@ export default function ShopDrawingQC() {
   }, []);
 
   const toggleAnswer = (questionId: keyof ProjectAnswers) => {
+    if (questionId === 'isBacklit') setBacklitAnswered(true);
     setProjectAnswers((prev) => ({ ...prev, [questionId]: !prev[questionId] }));
   };
 
@@ -292,6 +294,7 @@ export default function ShopDrawingQC() {
     setError(null);
     setProgress(0);
     setProjectAnswers({ isBacklit: false, hasCutouts: false, hasCorners: false, hasLogos: false });
+    setBacklitAnswered(false);
     setCompressionResult(null);
     setShowReviewerPicker(false);
     setSubmittedTo(null);
@@ -455,7 +458,10 @@ export default function ShopDrawingQC() {
         <div className="max-w-2xl mx-auto">
           <div className="text-center mb-8">
             <h2 className="text-2xl font-bold text-white mb-2">Project Details</h2>
-            <p className="text-gray-400">Select all that apply to enable relevant checks</p>
+            <p className="text-gray-400">Answer all questions before running analysis</p>
+            {!backlitAnswered && (
+              <p className="text-orange-400 text-sm mt-2">⚠️ You must indicate whether this is a backlit wall</p>
+            )}
           </div>
 
           <div className="space-y-3 mb-8">
@@ -491,7 +497,12 @@ export default function ShopDrawingQC() {
             </button>
             <button
               onClick={runAnalysis}
-              className="flex-1 py-4 bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-400 hover:to-pink-400 text-black font-bold text-lg rounded-xl transition-colors flex items-center justify-center gap-2"
+              disabled={!backlitAnswered}
+              className={`flex-1 py-4 font-bold text-lg rounded-xl transition-colors flex items-center justify-center gap-2 ${
+                backlitAnswered
+                  ? 'bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-400 hover:to-pink-400 text-black'
+                  : 'bg-gray-800 text-gray-500 cursor-not-allowed'
+              }`}
             >
               <Zap size={22} />
               Run Analysis
