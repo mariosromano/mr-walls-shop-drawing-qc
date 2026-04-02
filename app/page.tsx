@@ -147,6 +147,9 @@ export default function ShopDrawingQC() {
   const [compressionResult, setCompressionResult] = useState<{ original: number; compressed: number } | null>(null);
   const [showReviewerPicker, setShowReviewerPicker] = useState(false);
   const [submittedTo, setSubmittedTo] = useState<string | null>(null);
+  const [projectNameOverride, setProjectNameOverride] = useState('');
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const reviewerPickerRef = useRef<HTMLDivElement>(null);
 
   // Close reviewer picker when clicking outside
@@ -273,6 +276,7 @@ export default function ShopDrawingQC() {
 
       const data = await analyzeResponse.json();
       setResults(data.results);
+      setProjectNameOverride(data.results?.extractedInfo?.projectName || '');
       setProgress(100);
       setStep('results');
     } catch (err) {
@@ -291,6 +295,9 @@ export default function ShopDrawingQC() {
     setCompressionResult(null);
     setShowReviewerPicker(false);
     setSubmittedTo(null);
+    setProjectNameOverride('');
+    setSubmitError(null);
+    setIsSubmitting(false);
   };
 
   const formatSize = (bytes: number): string => {
@@ -583,44 +590,64 @@ export default function ShopDrawingQC() {
                   </>
                 )}
               </div>
-              <div className="relative" ref={reviewerPickerRef}>
+              <div className="flex flex-col gap-3 w-full max-w-sm">
                 {submittedTo ? (
-                  <div className="px-8 py-3 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center gap-2">
+                  <div className="px-6 py-3 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center gap-2">
                     <CheckCircle size={20} className="text-emerald-400" />
-                    <span className="font-bold text-lg text-emerald-400">Submitted to {submittedTo}</span>
+                    <span className="font-bold text-emerald-400">Posted to #{submittedTo}</span>
                   </div>
                 ) : (
-                  <button
-                    disabled={totalIssues > 0}
-                    onClick={() => setShowReviewerPicker(!showReviewerPicker)}
-                    className={`px-8 py-3 rounded-xl font-bold text-lg flex items-center gap-2 transition-colors ${
-                      totalIssues > 0 ? 'bg-gray-800 text-gray-500 cursor-not-allowed' : 'bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-400 hover:to-pink-400 text-black'
-                    }`}
-                  >
-                    <Send size={20} />
-                    Submit for Review
-                  </button>
-                )}
-
-                {showReviewerPicker && (
-                  <div className="absolute bottom-full right-0 mb-2 w-56 bg-gray-900 border border-gray-700 rounded-xl shadow-xl overflow-hidden z-10">
-                    <div className="px-4 py-2 border-b border-gray-800">
-                      <p className="text-sm text-gray-400 font-medium">Send to reviewer</p>
+                  <>
+                    <div className="flex flex-col gap-1">
+                      <label className="text-xs text-gray-400 font-medium">Project name (confirm before submitting)</label>
+                      <input
+                        type="text"
+                        value={projectNameOverride}
+                        onChange={(e) => setProjectNameOverride(e.target.value)}
+                        placeholder="e.g. 848P - Rosero Garage"
+                        className="w-full px-4 py-2 rounded-lg bg-gray-800 border border-gray-700 text-white text-sm focus:outline-none focus:border-orange-500"
+                      />
                     </div>
-                    {REVIEWERS.map((reviewer) => (
-                      <button
-                        key={reviewer}
-                        onClick={() => {
-                          setSubmittedTo(reviewer);
-                          setShowReviewerPicker(false);
-                        }}
-                        className="w-full px-4 py-3 text-left text-white hover:bg-gray-800 transition-colors flex items-center gap-3"
-                      >
-                        <User size={16} className="text-gray-400" />
-                        {reviewer}
-                      </button>
-                    ))}
-                  </div>
+                    {submitError && (
+                      <p className="text-sm text-pink-400">{submitError}</p>
+                    )}
+                    <button
+                      disabled={totalIssues > 0 || !projectNameOverride.trim() || isSubmitting}
+                      onClick={async () => {
+                        setIsSubmitting(true);
+                        setSubmitError(null);
+                        try {
+                          const res = await fetch('/api/submit', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                              projectName: projectNameOverride.trim(),
+                              filename: file?.name || '',
+                              results,
+                            }),
+                          });
+                          const data = await res.json();
+                          if (!res.ok) {
+                            setSubmitError(data.error || 'Submission failed');
+                          } else {
+                            setSubmittedTo(data.project || projectNameOverride);
+                          }
+                        } catch {
+                          setSubmitError('Network error — please try again');
+                        } finally {
+                          setIsSubmitting(false);
+                        }
+                      }}
+                      className={`px-8 py-3 rounded-xl font-bold text-lg flex items-center justify-center gap-2 transition-colors ${
+                        totalIssues > 0 || !projectNameOverride.trim() || isSubmitting
+                          ? 'bg-gray-800 text-gray-500 cursor-not-allowed'
+                          : 'bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-400 hover:to-pink-400 text-black'
+                      }`}
+                    >
+                      {isSubmitting ? <Loader2 size={20} className="animate-spin" /> : <Send size={20} />}
+                      {isSubmitting ? 'Submitting...' : 'Submit for Review'}
+                    </button>
+                  </>
                 )}
               </div>
             </div>
