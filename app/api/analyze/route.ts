@@ -34,6 +34,8 @@ const CHECKLIST_PROMPT = `Analyze this shop drawing PDF against the following ch
 - Version/revision number: PASS if present, FAIL if missing
 - Scale: PASS if indicated, FAIL if missing
 - Date: PASS if present, FAIL if missing
+- Project location: PASS if any location or "License" is present — "License" is an acceptable value for this field, do NOT fail it
+- Installer information: An "x" or "X" in the installer field is intentional — it marks where the installer will sign after receiving the drawing. PASS if installer field contains x/X or any name. Only FAIL if the field is completely absent.
 
 ### 5. MATERIAL/FINISH CALLOUTS
 - Material must specify "Corian Solid Surface" or "Solid Surface": PASS/FAIL
