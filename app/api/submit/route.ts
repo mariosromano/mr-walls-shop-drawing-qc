@@ -4,34 +4,17 @@ const AIRTABLE_TOKEN = process.env.AIRTABLE_TOKEN;
 const SLACK_BOT_TOKEN = process.env.SLACK_BOT_TOKEN;
 const BASE_ID = 'app6MNeWlLW997eVg';
 
-// Airtable staff record ID → Slack user ID map
-const STAFF_SLACK_IDS: Record<string, string> = {
-  // Populated from known staff
-  samantha: 'U049MHELAGH',
-  mario: 'U0359HGMURK',
-  carlo: 'U01UC9LDUNN',
-  lucia: 'U03NADB46KH',
-  toni: 'U03A6ET1U3U',
-  kamila: 'U022LHAS5HB',
-  sawyer: 'U02B4GJQEA1',
+// Airtable Staff record ID → Slack user ID
+const STAFF_RECORD_TO_SLACK: Record<string, string> = {
+  'rec0dIRxb3M3rxwhj': 'U049MHELAGH', // Samantha Stapleton
+  'recOQ66YfWQYEnOsL': 'U0359HGMURK', // Mario Romano
+  'recbA7sW0YP0TWC4V': 'U01UC9LDUNN', // Carlo Gomez
+  'recOPay1tJ74fOtR2': 'U03NADB46KH', // Lucia Debonis
+  'recXYUpTvyp06MZta': 'U03A6ET1U3U', // Toni Vrapi
+  'recxr2enNUGe1GLg3': 'U022LHAS5HB', // Kamila Weiss
+  'rec2I819qhRyvObdl': 'U02B4GJQEA1', // Sawyer Romano
+  'recYwVvHGYKxcqw1R': 'U08BXDJLA6M', // Mindy Kaufman
 };
-
-async function getManagerSlackId(managerRecordIds: string[]): Promise<string | null> {
-  for (const rid of managerRecordIds) {
-    try {
-      const res = await fetch(
-        `https://api.airtable.com/v0/${BASE_ID}/Staff/${rid}?fields[]=First%20Name&fields[]=Last%20Name`,
-        { headers: { Authorization: `Bearer ${AIRTABLE_TOKEN}` } }
-      );
-      const data = await res.json();
-      const firstName = (data.fields?.['First Name'] || '').toLowerCase().trim();
-      if (STAFF_SLACK_IDS[firstName]) {
-        return STAFF_SLACK_IDS[firstName];
-      }
-    } catch {}
-  }
-  return null;
-}
 
 export async function POST(req: NextRequest) {
   const { projectName, filename, results } = await req.json();
@@ -58,10 +41,16 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'No Slack channel found for this project' }, { status: 404 });
   }
 
-  // 2. Look up manager Slack ID
+  // 2. Resolve manager Slack mention
   const managerRecordIds: string[] = record.fields['Manager'] || [];
-  const managerSlackId = await getManagerSlackId(managerRecordIds);
-  const managerMention = managerSlackId ? `<@${managerSlackId}>` : 'Manager';
+  let managerMention = 'Manager';
+  for (const rid of managerRecordIds) {
+    const slackId = STAFF_RECORD_TO_SLACK[rid];
+    if (slackId) {
+      managerMention = `<@${slackId}>`;
+      break;
+    }
+  }
 
   // 3. Build Slack message
   const passed = results.passed?.length || 0;
