@@ -134,7 +134,6 @@ export async function POST(req: NextRequest) {
 
     // Append to canvas
     const canvasEntry = [
-      `---`,
       `## 📄 ${filename}${version ? ` — ${version}` : ''}`,
       `**Submitted:** ${now} at ${nowTime} PT${drawnBy ? `  |  **By:** ${drawnBy}` : ''}`,
       `**QC:** ✅ ${passed} passed  ⚠️ ${warnings} warnings  👁️ ${manual} manual`,
