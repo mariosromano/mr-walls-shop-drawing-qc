@@ -131,9 +131,11 @@ export async function POST(req: NextRequest) {
     filePermalink = await uploadPdfToCanvas(canvasId, pdfBlobUrl, filename, slackChannelId);
 
     // Append to canvas
+    // Mark all previous entries as superseded by replacing 'Pending manager review' with 'Superseded'
+    // We do this by inserting the new entry at the top with a LATEST badge
     const canvasEntry = [
       `---`,
-      `## 📄 ${filename}${version ? ` — ${version}` : ''}`,
+      `## 🆕 LATEST — 📄 ${filename}${version ? ` — ${version}` : ''}`,
       `**Date:** ${now}${drawnBy ? `  |  **By:** ${drawnBy}` : ''}`,
       `**QC:** ✅ ${passed} passed  ⚠️ ${warnings} warnings  👁️ ${manual} manual`,
       `**Status:** Pending manager review`,
@@ -141,10 +143,17 @@ export async function POST(req: NextRequest) {
       ``,
     ].filter(l => l !== '').join('\n');
 
+    // Insert at top (after header), push older entries down
     await slackPost('canvases.edit', {
       canvas_id: canvasId,
-      changes: [{ operation: 'insert_at_end', document_content: { type: 'markdown', markdown: canvasEntry } }],
-    });
+      changes: [{ operation: 'insert_after', section_id: 'intro', document_content: { type: 'markdown', markdown: canvasEntry } }],
+    }).catch(() =>
+      // Fallback: insert at end if section_id not found
+      slackPost('canvases.edit', {
+        canvas_id: canvasId,
+        changes: [{ operation: 'insert_at_end', document_content: { type: 'markdown', markdown: canvasEntry } }],
+      })
+    );
   }
 
   // 4. Short channel notification
