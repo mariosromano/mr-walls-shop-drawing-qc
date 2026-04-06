@@ -30,15 +30,15 @@ async function openDM(userId: string): Promise<string> {
 }
 
 async function getOrCreateCanvas(channelId: string): Promise<string | null> {
-  // Check if channel has a canvas
-  const info = await (await fetch(`https://slack.com/api/conversations.info?channel=${channelId}&include_locale=false`, {
+  // Check existing canvas via conversations.info
+  const res = await fetch(`https://slack.com/api/conversations.info?channel=${channelId}&include_locale=false`, {
     headers: { Authorization: `Bearer ${SLACK_BOT_TOKEN}` },
-  })).json();
+  });
+  const info = await res.json();
+  const existingId = info.channel?.properties?.canvas?.file_id;
+  if (existingId) return existingId;
 
-  const existingCanvasId = info.channel?.properties?.canvas?.file_id;
-  if (existingCanvasId) return existingCanvasId;
-
-  // Create one
+  // Create new canvas for this channel
   const created = await slackPost('conversations.canvases.create', {
     channel_id: channelId,
     document_content: {
@@ -49,38 +49,29 @@ async function getOrCreateCanvas(channelId: string): Promise<string | null> {
   return created.canvas_id || null;
 }
 
-async function appendToCanvas(canvasId: string, markdown: string) {
-  return slackPost('canvases.sections.lookup', { canvas_id: canvasId, criteria: { contains_text: 'Revisions and Updates' } })
-    .then(() => slackPost('canvases.edit', {
-      canvas_id: canvasId,
-      changes: [{ operation: 'insert_at_end', document_content: { type: 'markdown', markdown } }],
-    }));
-}
-
-async function uploadPdfToSlack(channelId: string, pdfUrl: string, filename: string): Promise<string | null> {
+async function uploadPdfToCanvas(canvasId: string, pdfUrl: string, filename: string, channelId: string): Promise<string | null> {
   try {
-    // Download PDF
+    // Download the PDF
     const pdfRes = await fetch(pdfUrl);
     if (!pdfRes.ok) return null;
     const buffer = await pdfRes.arrayBuffer();
     const bytes = new Uint8Array(buffer);
 
-    // Get upload URL
+    // Get Slack upload URL (upload to channel so it's accessible)
     const uploadUrlRes = await (await fetch(
       `https://slack.com/api/files.getUploadURLExternal?filename=${encodeURIComponent(filename)}&length=${bytes.length}`,
       { headers: { Authorization: `Bearer ${SLACK_BOT_TOKEN}` } }
     )).json();
-
     if (!uploadUrlRes.ok) return null;
 
-    // Upload file
+    // Upload bytes
     await fetch(uploadUrlRes.upload_url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/octet-stream' },
       body: bytes,
     });
 
-    // Complete upload
+    // Complete — associate with channel (needed for permalink) but unfurl quietly
     const completeRes = await slackPost('files.completeUploadExternal', {
       files: [{ id: uploadUrlRes.file_id, title: filename }],
       channel_id: channelId,
@@ -107,7 +98,6 @@ export async function POST(req: NextRequest) {
   );
   const atData = await atRes.json();
   const record = atData.records?.[0];
-
   if (!record) return NextResponse.json({ error: `Project "${projectName}" not found in Airtable` }, { status: 404 });
 
   const slackChannelId = record.fields['Slack Channel ID'];
@@ -129,60 +119,47 @@ export async function POST(req: NextRequest) {
   const managerMention = managerSlackId ? `<@${managerSlackId}>` : 'Manager';
   const now = new Date().toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' });
 
-  // 2. Upload PDF to Slack channel & get permalink
-  let filePermalink: string | null = null;
-  if (pdfBlobUrl) {
-    filePermalink = await uploadPdfToSlack(slackChannelId, pdfBlobUrl, filename);
-  }
-
-  // 3. Get or create canvas, append submission entry
+  // 2. Get or create canvas (one only)
   const canvasId = await getOrCreateCanvas(slackChannelId);
-  if (canvasId) {
+
+  // 3. Upload PDF and get permalink, then embed in canvas
+  let filePermalink: string | null = null;
+  if (pdfBlobUrl && canvasId) {
+    filePermalink = await uploadPdfToCanvas(canvasId, pdfBlobUrl, filename, slackChannelId);
+
+    // Append to canvas
     const canvasEntry = [
       `---`,
       `## 📄 ${filename}${version ? ` — ${version}` : ''}`,
       `**Date:** ${now}${drawnBy ? `  |  **By:** ${drawnBy}` : ''}`,
       `**QC:** ✅ ${passed} passed  ⚠️ ${warnings} warnings  👁️ ${manual} manual`,
       `**Status:** Pending manager review`,
-      filePermalink ? `**File:** ${filePermalink}` : '',
+      filePermalink ? `[📎 Open PDF](${filePermalink})` : '',
       ``,
-    ].filter(l => l !== null).join('\n');
+    ].filter(l => l !== '').join('\n');
 
-    await appendToCanvas(canvasId, canvasEntry);
+    await slackPost('canvases.edit', {
+      canvas_id: canvasId,
+      changes: [{ operation: 'insert_at_end', document_content: { type: 'markdown', markdown: canvasEntry } }],
+    });
   }
 
-  // 4. Post notification to project channel
-  const channelText = [
-    `✅ *Shop drawing ready for review — ${fullProjectName}*`,
-    `📄 *File:* ${filename}${version ? `  •  ${version}` : ''}`,
-    drawnBy ? `👤 *Drawn by:* ${drawnBy}` : null,
-    `*QC Results:*  ✅ ${passed} passed  ⚠️ ${warnings} warnings  👁️ ${manual} manual`,
-    ``,
-    results.summary,
-    ``,
-    `${managerMention} — PDF added to the Revisions and Updates canvas. Review request sent to your DMs.`,
-  ].filter(Boolean).join('\n');
-
+  // 4. Short channel notification
+  const channelText = `${managerMention} Shop drawing ready for review\nPDF added to the Revisions and Updates canvas.`;
   await slackPost('chat.postMessage', { channel: slackChannelId, text: channelText });
 
   // 5. DM manager
   if (managerSlackId) {
     const dmText = [
-      `📋 *Shop drawing ready for your review*`,
+      `📋 *Shop drawing ready for your review — ${fullProjectName}*`,
       ``,
-      `*Project:* ${fullProjectName}`,
       `📄 *File:* ${filename}${version ? `  •  ${version}` : ''}`,
       drawnBy ? `👤 *Drawn by:* ${drawnBy}` : null,
+      `*QC:*  ✅ ${passed} passed  ⚠️ ${warnings} warnings  👁️ ${manual} manual`,
       ``,
-      `*QC Results:*  ✅ ${passed} passed  ⚠️ ${warnings} warnings  👁️ ${manual} manual`,
+      filePermalink ? `<${filePermalink}|📎 Open PDF>` : null,
       ``,
-      results.summary,
-      ``,
-      filePermalink ? `<${filePermalink}|📎 Open PDF in Slack>` : (pdfBlobUrl ? `<${pdfBlobUrl}|📎 Open PDF>` : null),
-      ``,
-      `━━━━━━━━━━━━━━━━━━━━━━━`,
-      `Reply *approve* to confirm the shop drawing is approved.`,
-      `Or describe the revisions needed and I'll post them to the project channel.`,
+      `Reply *approve* to confirm, or describe the revisions needed.`,
       ``,
       `_record=${airtableRecordId} | channel=${slackChannelId} | file=${filename}_`,
     ].filter(Boolean).join('\n');
