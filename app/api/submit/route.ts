@@ -140,6 +140,8 @@ export async function POST(req: NextRequest) {
       `**Status:** ⏳ Pending manager review`,
       filePermalink ? `[📎 Open PDF](${filePermalink})` : '',
       ``,
+      `---`,
+      ``,
     ].filter(l => l !== '').join('\n');
 
     // Find the first existing entry to insert before it (newest at top)
