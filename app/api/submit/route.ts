@@ -143,20 +143,21 @@ export async function POST(req: NextRequest) {
       ``,
     ].filter(l => l !== '').join('\n');
 
-    // Find the first section (header) to insert after it, so newest is always at top
+    // Find the first existing entry to insert before it (newest at top)
     const sectionsRes = await slackPost('canvases.sections.lookup', {
       canvas_id: canvasId,
-      criteria: { contains_text: 'Revisions and Updates' },
+      criteria: { contains_text: 'Shop Drawing' },
     });
-    const firstSectionId = sectionsRes.sections?.[0]?.id;
+    const firstEntryId = sectionsRes.sections?.[0]?.id;
 
-    if (firstSectionId) {
+    if (firstEntryId) {
+      // Insert before the first existing entry so newest is at top
       await slackPost('canvases.edit', {
         canvas_id: canvasId,
-        changes: [{ operation: 'insert_after', section_id: firstSectionId, document_content: { type: 'markdown', markdown: canvasEntry } }],
+        changes: [{ operation: 'insert_before', section_id: firstEntryId, document_content: { type: 'markdown', markdown: canvasEntry } }],
       });
     } else {
-      // Fallback: append at end
+      // No existing entries — just append
       await slackPost('canvases.edit', {
         canvas_id: canvasId,
         changes: [{ operation: 'insert_at_end', document_content: { type: 'markdown', markdown: canvasEntry } }],
