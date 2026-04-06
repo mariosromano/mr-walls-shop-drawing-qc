@@ -26,11 +26,11 @@ async function openDM(userId: string): Promise<string> {
   return data.channel.id;
 }
 
-async function postMessage(channel: string, text: string, blocks?: object[]) {
+async function postMessage(channel: string, text: string) {
   const res = await fetch('https://slack.com/api/chat.postMessage', {
     method: 'POST',
     headers: { Authorization: `Bearer ${SLACK_BOT_TOKEN}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ channel, text, ...(blocks ? { blocks } : {}) }),
+    body: JSON.stringify({ channel, text }),
   });
   return res.json();
 }
@@ -70,6 +70,8 @@ export async function POST(req: NextRequest) {
     }
   }
   const managerMention = managerSlackId ? `<@${managerSlackId}>` : 'Manager';
+  const fullProjectName = record.fields['Project Name'];
+  const airtableRecordId = record.id;
 
   // 3. Build summary
   const passed = results.passed?.length || 0;
@@ -77,7 +79,6 @@ export async function POST(req: NextRequest) {
   const manual = results.manualReview?.length || 0;
   const drawnBy = results.extractedInfo?.drawnBy;
   const version = results.extractedInfo?.version;
-  const fullProjectName = record.fields['Project Name'];
 
   // 4. Post notification to project channel (no buttons)
   const channelText = [
@@ -94,65 +95,29 @@ export async function POST(req: NextRequest) {
 
   await postMessage(slackChannelId, channelText);
 
-  // 5. Send DM to manager with buttons
+  // 5. Send DM to manager — text-based approval flow
   if (managerSlackId) {
-    const approvePayload = JSON.stringify({
-      action: 'sd_approve',
-      recordId: record.id,
-      pdfUrl: pdfBlobUrl,
-      filename,
-      projectName: fullProjectName,
-      channelId: slackChannelId,
-    });
-
-    const revisionsPayload = JSON.stringify({
-      action: 'sd_revisions',
-      recordId: record.id,
-      projectName: fullProjectName,
-      channelId: slackChannelId,
-    });
-
-    const dmBlocks = [
-      {
-        type: 'section',
-        text: {
-          type: 'mrkdwn',
-          text: [
-            `📋 *Shop drawing ready for your review*`,
-            ``,
-            `*Project:* ${fullProjectName}`,
-            `📄 *File:* ${filename}${version ? `  •  ${version}` : ''}`,
-            drawnBy ? `👤 *Drawn by:* ${drawnBy}` : null,
-            ``,
-            `*QC Results:*  ✅ ${passed} passed  ⚠️ ${warnings} warnings  👁️ ${manual} manual`,
-            ``,
-            results.summary,
-            pdfBlobUrl ? `\n<${pdfBlobUrl}|📎 Open PDF>` : null,
-          ].filter(Boolean).join('\n'),
-        },
-      },
-      {
-        type: 'actions',
-        elements: [
-          {
-            type: 'button',
-            text: { type: 'plain_text', text: '✅ Approve', emoji: true },
-            style: 'primary',
-            action_id: 'sd_approve',
-            value: approvePayload,
-          },
-          {
-            type: 'button',
-            text: { type: 'plain_text', text: '🔄 Request Revisions', emoji: true },
-            action_id: 'sd_revisions',
-            value: revisionsPayload,
-          },
-        ],
-      },
-    ];
+    const dmText = [
+      `📋 *Shop drawing ready for your review*`,
+      ``,
+      `*Project:* ${fullProjectName}`,
+      `📄 *File:* ${filename}${version ? `  •  ${version}` : ''}`,
+      drawnBy ? `👤 *Drawn by:* ${drawnBy}` : null,
+      ``,
+      `*QC Results:*  ✅ ${passed} passed  ⚠️ ${warnings} warnings  👁️ ${manual} manual`,
+      ``,
+      results.summary,
+      pdfBlobUrl ? `\n<${pdfBlobUrl}|📎 Open PDF>` : null,
+      ``,
+      `━━━━━━━━━━━━━━━━━━━━━━━`,
+      `Reply *approve* to save the PDF to Airtable.`,
+      `Or describe what revisions are needed and I'll post them to the project channel.`,
+      ``,
+      `_Context: record=${airtableRecordId} | channel=${slackChannelId} | file=${filename} | pdf=${pdfBlobUrl || 'none'}_`,
+    ].filter(Boolean).join('\n');
 
     const dmChannel = await openDM(managerSlackId);
-    await postMessage(dmChannel, `Shop drawing ready for review — ${fullProjectName}`, dmBlocks);
+    await postMessage(dmChannel, dmText);
   }
 
   return NextResponse.json({ ok: true, channel: slackChannelId, project: fullProjectName });
