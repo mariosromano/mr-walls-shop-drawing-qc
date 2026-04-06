@@ -30,15 +30,19 @@ async function openDM(userId: string): Promise<string> {
 }
 
 async function getOrCreateCanvas(channelId: string): Promise<string | null> {
-  // Check existing canvas via conversations.info
-  const res = await fetch(`https://slack.com/api/conversations.info?channel=${channelId}&include_locale=false`, {
+  // Check existing canvases via tabs in conversations.info
+  const res = await fetch(`https://slack.com/api/conversations.info?channel=${channelId}`, {
     headers: { Authorization: `Bearer ${SLACK_BOT_TOKEN}` },
   });
   const info = await res.json();
-  const existingId = info.channel?.properties?.canvas?.file_id;
-  if (existingId) return existingId;
+  const tabs: Array<{type: string; label?: string; data?: {file_id: string}}> =
+    info.channel?.properties?.tabs || [];
 
-  // Create new canvas for this channel
+  // Look for a canvas labeled 'Revisions and Updates'
+  const existing = tabs.find(t => t.type === 'canvas' && t.label === 'Revisions and Updates');
+  if (existing?.data?.file_id) return existing.data.file_id;
+
+  // Create new canvas
   const created = await slackPost('conversations.canvases.create', {
     channel_id: channelId,
     document_content: {
@@ -71,10 +75,9 @@ async function uploadPdfToCanvas(canvasId: string, pdfUrl: string, filename: str
       body: bytes,
     });
 
-    // Complete — associate with channel (needed for permalink) but unfurl quietly
+    // Complete upload — no channel_id so it doesn't post to channel
     const completeRes = await slackPost('files.completeUploadExternal', {
       files: [{ id: uploadUrlRes.file_id, title: filename }],
-      channel_id: channelId,
     });
 
     return completeRes.files?.[0]?.permalink || null;
