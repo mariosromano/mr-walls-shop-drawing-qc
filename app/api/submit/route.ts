@@ -120,7 +120,9 @@ export async function POST(req: NextRequest) {
   const drawnBy = results.extractedInfo?.drawnBy;
   const version = results.extractedInfo?.version;
   const managerMention = managerSlackId ? `<@${managerSlackId}>` : 'Manager';
-  const now = new Date().toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' });
+  const nowDate = new Date();
+  const now = nowDate.toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' });
+  const nowTime = nowDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Los_Angeles' });
 
   // 2. Get or create canvas (one only)
   const canvasId = await getOrCreateCanvas(slackChannelId);
@@ -131,29 +133,20 @@ export async function POST(req: NextRequest) {
     filePermalink = await uploadPdfToCanvas(canvasId, pdfBlobUrl, filename, slackChannelId);
 
     // Append to canvas
-    // Mark all previous entries as superseded by replacing 'Pending manager review' with 'Superseded'
-    // We do this by inserting the new entry at the top with a LATEST badge
     const canvasEntry = [
       `---`,
-      `## 🆕 LATEST — 📄 ${filename}${version ? ` — ${version}` : ''}`,
-      `**Date:** ${now}${drawnBy ? `  |  **By:** ${drawnBy}` : ''}`,
+      `## 📄 ${filename}${version ? ` — ${version}` : ''}`,
+      `**Submitted:** ${now} at ${nowTime} PT${drawnBy ? `  |  **By:** ${drawnBy}` : ''}`,
       `**QC:** ✅ ${passed} passed  ⚠️ ${warnings} warnings  👁️ ${manual} manual`,
-      `**Status:** Pending manager review`,
+      `**Status:** ⏳ Pending manager review`,
       filePermalink ? `[📎 Open PDF](${filePermalink})` : '',
       ``,
     ].filter(l => l !== '').join('\n');
 
-    // Insert at top (after header), push older entries down
     await slackPost('canvases.edit', {
       canvas_id: canvasId,
-      changes: [{ operation: 'insert_after', section_id: 'intro', document_content: { type: 'markdown', markdown: canvasEntry } }],
-    }).catch(() =>
-      // Fallback: insert at end if section_id not found
-      slackPost('canvases.edit', {
-        canvas_id: canvasId,
-        changes: [{ operation: 'insert_at_end', document_content: { type: 'markdown', markdown: canvasEntry } }],
-      })
-    );
+      changes: [{ operation: 'insert_at_end', document_content: { type: 'markdown', markdown: canvasEntry } }],
+    });
   }
 
   // 4. Short channel notification
