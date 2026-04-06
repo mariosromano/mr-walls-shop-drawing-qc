@@ -17,13 +17,13 @@ const STAFF_RECORD_TO_SLACK: Record<string, string> = {
 };
 
 export async function POST(req: NextRequest) {
-  const { projectName, filename, results } = await req.json();
+  const { projectName, filename, results, pdfBlobUrl } = await req.json();
 
   if (!projectName) {
     return NextResponse.json({ error: 'Project name is required' }, { status: 400 });
   }
 
-  // 1. Look up project in Airtable by name
+  // 1. Look up project in Airtable
   const formula = encodeURIComponent(`SEARCH("${projectName.trim()}", {Project Name})`);
   const atRes = await fetch(
     `https://api.airtable.com/v0/${BASE_ID}/Projects?filterByFormula=${formula}&fields[]=Project%20Name&fields[]=Slack%20Channel%20ID&fields[]=Manager`,
@@ -52,37 +52,77 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // 3. Build Slack message
+  // 3. Build message details
   const passed = results.passed?.length || 0;
   const warnings = results.warnings?.length || 0;
   const manual = results.manualReview?.length || 0;
-
   const drawnBy = results.extractedInfo?.drawnBy;
   const version = results.extractedInfo?.version;
+  const airtableRecordId = record.id;
 
-  const lines = [
-    `✅ *Shop drawing is ready for manager review*`,
-    ``,
-    `📄 *File:* ${filename}${version ? `  •  ${version}` : ''}`,
-    drawnBy ? `👤 *Drawn by:* ${drawnBy}` : null,
-    ``,
-    `*QC Results:*  ✅ ${passed} passed  ⚠️ ${warnings} warnings  👁️ ${manual} manual`,
-    ``,
-    results.summary,
-    ``,
-    `Hey ${managerMention} — this one's ready for your review!`,
-  ]
-    .filter((l) => l !== null)
-    .join('\n');
+  // Encode metadata in button value for the approve handler
+  const approvePayload = JSON.stringify({
+    action: 'sd_approve',
+    recordId: airtableRecordId,
+    pdfUrl: pdfBlobUrl,
+    filename,
+    projectName: record.fields['Project Name'],
+  });
 
-  // 4. Post to Slack channel
+  const revisionsPayload = JSON.stringify({
+    action: 'sd_revisions',
+    recordId: airtableRecordId,
+    projectName: record.fields['Project Name'],
+  });
+
+  // 4. Post with buttons
+  const blocks = [
+    {
+      type: 'section',
+      text: {
+        type: 'mrkdwn',
+        text: [
+          `✅ *Shop drawing is ready for manager review*`,
+          ``,
+          `📄 *File:* ${filename}${version ? `  •  ${version}` : ''}`,
+          drawnBy ? `👤 *Drawn by:* ${drawnBy}` : null,
+          ``,
+          `*QC Results:*  ✅ ${passed} passed  ⚠️ ${warnings} warnings  👁️ ${manual} manual`,
+          ``,
+          results.summary,
+          ``,
+          `Hey ${managerMention} — this one's ready for your review!`,
+          pdfBlobUrl ? `\n<${pdfBlobUrl}|📎 View PDF>` : null,
+        ].filter(Boolean).join('\n'),
+      },
+    },
+    {
+      type: 'actions',
+      elements: [
+        {
+          type: 'button',
+          text: { type: 'plain_text', text: '✅ Approve', emoji: true },
+          style: 'primary',
+          action_id: 'sd_approve',
+          value: approvePayload,
+        },
+        {
+          type: 'button',
+          text: { type: 'plain_text', text: '🔄 Request Revisions', emoji: true },
+          action_id: 'sd_revisions',
+          value: revisionsPayload,
+        },
+      ],
+    },
+  ];
+
   const slackRes = await fetch('https://slack.com/api/chat.postMessage', {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${SLACK_BOT_TOKEN}`,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ channel: slackChannelId, text: lines }),
+    body: JSON.stringify({ channel: slackChannelId, blocks }),
   });
 
   const slackData = await slackRes.json();

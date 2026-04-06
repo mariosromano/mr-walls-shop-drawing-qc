@@ -151,6 +151,7 @@ export default function ShopDrawingQC() {
   const [backlitAnswered, setBacklitAnswered] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [pdfBlobUrl, setPdfBlobUrl] = useState<string | null>(null);
   const reviewerPickerRef = useRef<HTMLDivElement>(null);
 
   // Close reviewer picker when clicking outside
@@ -252,6 +253,7 @@ export default function ShopDrawingQC() {
       setProgress(10);
 
       const blob = await upload(file.name, file, {
+        // Store blob URL for submit step
         access: 'public',
         handleUploadUrl: '/api/upload',
       });
@@ -286,6 +288,7 @@ export default function ShopDrawingQC() {
       const data = await analyzeResponse.json();
       setResults(data.results);
       setProjectNameOverride(data.results?.extractedInfo?.projectName || '');
+      setPdfBlobUrl(blob.url);
       setProgress(100);
       setStep('results');
     } catch (err) {
@@ -308,6 +311,7 @@ export default function ShopDrawingQC() {
     setProjectNameOverride('');
     setSubmitError(null);
     setIsSubmitting(false);
+    setPdfBlobUrl(null);
   };
 
   const formatSize = (bytes: number): string => {
@@ -655,6 +659,7 @@ export default function ShopDrawingQC() {
                               projectName: projectNameOverride.trim(),
                               filename: file?.name || '',
                               results,
+                              pdfBlobUrl,
                             }),
                           });
                           const data = await res.json();
