@@ -522,7 +522,7 @@ export default function ShopDrawingQC() {
             <textarea
               value={designerNotes}
               onChange={(e) => setDesignerNotes(e.target.value)}
-              placeholder="Any notes for the manager about this drawing..."
+              placeholder="Any additional information that the sales team needs to relay to the client?"
               rows={3}
               className="w-full px-4 py-3 rounded-xl bg-gray-900 border border-gray-800 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-orange-500 resize-none"
             />
