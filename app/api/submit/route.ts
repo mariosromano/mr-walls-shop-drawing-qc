@@ -134,20 +134,18 @@ export async function POST(req: NextRequest) {
 
     // Append to canvas
     const canvasEntry = [
-      `## 🆕 ${filename}${version ? ` — ${version}` : ''}`,
+      `## 📄 ${filename}${version ? ` — ${version}` : ''}`,
       `**Submitted:** ${now} at ${nowTime} PT${drawnBy ? `  |  **By:** ${drawnBy}` : ''}`,
       `**QC:** ✅ ${passed} passed  ⚠️ ${warnings} warnings  👁️ ${manual} manual`,
       `**Status:** ⏳ Pending manager review`,
       filePermalink ? `[📎 Open PDF](${filePermalink})` : '',
-      ``,
-      `---`,
-      ``,
+      `\n---\n`,
     ].filter(l => l !== '').join('\n');
 
-    // Find the first section of the current latest entry (🆕) to insert before it
+    // Find the first section of the topmost entry (📄 only appears in headings)
     const existingRes = await slackPost('canvases.sections.lookup', {
       canvas_id: canvasId,
-      criteria: { contains_text: '\uD83C\uDD95' }, // search for 🆕 emoji
+      criteria: { contains_text: '\uD83D\uDCC4' }, // 📄 emoji — heading only
     });
     const firstExistingId = existingRes.sections?.[0]?.id;
 
