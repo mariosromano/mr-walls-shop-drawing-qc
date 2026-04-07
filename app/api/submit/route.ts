@@ -82,13 +82,13 @@ async function uploadPdfToSlack(channelId: string, pdfUrl: string, filename: str
 }
 
 export async function POST(req: NextRequest) {
-  const { projectName, filename, results, pdfBlobUrl, designerNotes } = await req.json();
+  const { projectName, filename, results, pdfBlobUrl, designerNotes, renderUrl } = await req.json();
   if (!projectName) return NextResponse.json({ error: 'Project name is required' }, { status: 400 });
 
   // 1. Look up project
   const formula = encodeURIComponent(`SEARCH("${projectName.trim()}", {Project Name})`);
   const atRes = await fetch(
-    `https://api.airtable.com/v0/${BASE_ID}/Projects?filterByFormula=${formula}&fields[]=Project%20Name&fields[]=Slack%20Channel%20ID&fields[]=Manager&fields[]=Designer`,
+    `https://api.airtable.com/v0/${BASE_ID}/Projects?filterByFormula=${formula}&fields[]=Project%20Name&fields[]=Slack%20Channel%20ID&fields[]=Manager&fields[]=Render%20Folder%20URL&fields[]=Designer`,
     { headers: { Authorization: `Bearer ${AIRTABLE_TOKEN}` } }
   );
   const atData = await atRes.json();
@@ -99,6 +99,16 @@ export async function POST(req: NextRequest) {
   if (!slackChannelId) return NextResponse.json({ error: 'No Slack channel found' }, { status: 404 });
 
   const fullProjectName = record.fields['Project Name'];
+
+  // If designer provided a new render URL, save it to Airtable
+  const existingRenderUrls: string[] = record.fields['Render Folder URL'] || [];
+  if (renderUrl && !existingRenderUrls.includes(renderUrl)) {
+    await fetch(`https://api.airtable.com/v0/${BASE_ID}/Projects/${record.id}`, {
+      method: 'PATCH',
+      headers: { Authorization: `Bearer ${AIRTABLE_TOKEN}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ fields: { 'Render Folder URL': [renderUrl] } }),
+    });
+  }
   const airtableRecordId = record.id;
 
   // Resolve manager + designer Slack IDs

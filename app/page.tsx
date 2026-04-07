@@ -153,6 +153,10 @@ export default function ShopDrawingQC() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [pdfBlobUrl, setPdfBlobUrl] = useState<string | null>(null);
   const [designerNotes, setDesignerNotes] = useState('');
+  const [renderUrl, setRenderUrl] = useState<string | null | undefined>(undefined); // undefined=not checked, null=none found, string=url
+  const [renderUrlConfirmed, setRenderUrlConfirmed] = useState(false);
+  const [newRenderUrl, setNewRenderUrl] = useState('');
+  const [checkingProject, setCheckingProject] = useState(false);
   const reviewerPickerRef = useRef<HTMLDivElement>(null);
 
   // Close reviewer picker when clicking outside
@@ -314,6 +318,10 @@ export default function ShopDrawingQC() {
     setIsSubmitting(false);
     setPdfBlobUrl(null);
     setDesignerNotes('');
+    setRenderUrl(undefined);
+    setRenderUrlConfirmed(false);
+    setNewRenderUrl('');
+    setCheckingProject(false);
   };
 
   const formatSize = (bytes: number): string => {
@@ -651,16 +659,78 @@ export default function ShopDrawingQC() {
                       <input
                         type="text"
                         value={projectNameOverride}
-                        onChange={(e) => setProjectNameOverride(e.target.value)}
+                        onChange={(e) => {
+                          setProjectNameOverride(e.target.value);
+                          setRenderUrl(undefined);
+                          setRenderUrlConfirmed(false);
+                        }}
+                        onBlur={async () => {
+                          if (!projectNameOverride.trim()) return;
+                          setCheckingProject(true);
+                          try {
+                            const res = await fetch(`/api/check-project?name=${encodeURIComponent(projectNameOverride.trim())}`);
+                            const data = await res.json();
+                            if (data.found) {
+                              setRenderUrl(data.renderUrl || null);
+                            } else {
+                              setRenderUrl(undefined);
+                            }
+                          } catch { setRenderUrl(undefined); }
+                          finally { setCheckingProject(false); }
+                        }}
                         placeholder="e.g. 848P - Rosero Garage"
                         className="w-full px-4 py-2 rounded-lg bg-gray-800 border border-gray-700 text-white text-sm focus:outline-none focus:border-orange-500"
                       />
                     </div>
+
+                    {/* Render URL check */}
+                    {checkingProject && (
+                      <p className="text-xs text-gray-500">Checking render folder...</p>
+                    )}
+                    {!checkingProject && renderUrl && !renderUrlConfirmed && (
+                      <div className="p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/30">
+                        <p className="text-xs text-yellow-400 font-medium mb-2">📁 Render folder found — is it up to date?</p>
+                        <a href={renderUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-400 underline block mb-2 truncate">{renderUrl}</a>
+                        <button
+                          onClick={() => setRenderUrlConfirmed(true)}
+                          className="text-xs bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-300 px-3 py-1.5 rounded-lg transition-colors"
+                        >
+                          ✓ Yes, render folder is current
+                        </button>
+                      </div>
+                    )}
+                    {!checkingProject && renderUrl && renderUrlConfirmed && (
+                      <p className="text-xs text-green-400">✅ Render folder confirmed</p>
+                    )}
+                    {!checkingProject && renderUrl === null && (
+                      <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/30">
+                        <p className="text-xs text-red-400 font-medium mb-2">⚠️ No render folder found — add a link to continue</p>
+                        <input
+                          type="url"
+                          value={newRenderUrl}
+                          onChange={(e) => setNewRenderUrl(e.target.value)}
+                          placeholder="https://photos.app.goo.gl/..."
+                          className="w-full px-3 py-2 rounded-lg bg-gray-800 border border-gray-700 text-white text-xs focus:outline-none focus:border-orange-500 mb-2"
+                        />
+                        <button
+                          disabled={!newRenderUrl.trim()}
+                          onClick={async () => {
+                            if (!newRenderUrl.trim()) return;
+                            setRenderUrl(newRenderUrl.trim());
+                            setRenderUrlConfirmed(true);
+                          }}
+                          className="text-xs bg-orange-500/20 hover:bg-orange-500/30 text-orange-300 px-3 py-1.5 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                        >
+                          Save render link
+                        </button>
+                      </div>
+                    )}
+
                     {submitError && (
                       <p className="text-sm text-pink-400">{submitError}</p>
                     )}
                     <button
-                      disabled={totalIssues > 0 || !projectNameOverride.trim() || isSubmitting}
+                      disabled={totalIssues > 0 || !projectNameOverride.trim() || isSubmitting || (renderUrl !== undefined && !renderUrlConfirmed)}
                       onClick={async () => {
                         setIsSubmitting(true);
                         setSubmitError(null);
@@ -674,6 +744,7 @@ export default function ShopDrawingQC() {
                               results,
                               pdfBlobUrl,
                               designerNotes,
+                              renderUrl: newRenderUrl || renderUrl,
                             }),
                           });
                           const data = await res.json();
@@ -689,7 +760,7 @@ export default function ShopDrawingQC() {
                         }
                       }}
                       className={`px-8 py-3 rounded-xl font-bold text-lg flex items-center justify-center gap-2 transition-colors ${
-                        totalIssues > 0 || !projectNameOverride.trim() || isSubmitting
+                        totalIssues > 0 || !projectNameOverride.trim() || isSubmitting || (renderUrl !== undefined && !renderUrlConfirmed)
                           ? 'bg-gray-800 text-gray-500 cursor-not-allowed'
                           : 'bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-400 hover:to-pink-400 text-black'
                       }`}
