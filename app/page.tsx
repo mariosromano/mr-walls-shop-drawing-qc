@@ -157,6 +157,7 @@ export default function ShopDrawingQC() {
   const [renderUrlConfirmed, setRenderUrlConfirmed] = useState(false);
   const [newRenderUrl, setNewRenderUrl] = useState('');
   const [checkingProject, setCheckingProject] = useState(false);
+  const [overrideIssues, setOverrideIssues] = useState(false);
   const reviewerPickerRef = useRef<HTMLDivElement>(null);
 
   // Close reviewer picker when clicking outside
@@ -322,6 +323,7 @@ export default function ShopDrawingQC() {
     setRenderUrlConfirmed(false);
     setNewRenderUrl('');
     setCheckingProject(false);
+    setOverrideIssues(false);
   };
 
   const formatSize = (bytes: number): string => {
@@ -632,7 +634,20 @@ export default function ShopDrawingQC() {
                 {totalIssues > 0 ? (
                   <>
                     <XCircle className="text-pink-400" size={28} />
-                    <span className="font-semibold text-lg text-pink-400">{totalIssues} critical issue{totalIssues > 1 ? 's' : ''} must be fixed</span>
+                    <div>
+                      <span className="font-semibold text-lg text-pink-400">{totalIssues} critical issue{totalIssues > 1 ? \'s\' : \'\' } found</span>
+                      {!overrideIssues && (
+                        <button
+                          onClick={() => setOverrideIssues(true)}
+                          className="ml-3 text-xs text-gray-500 hover:text-gray-300 underline transition-colors"
+                        >
+                          Submit anyway
+                        </button>
+                      )}
+                      {overrideIssues && (
+                        <p className="text-xs text-yellow-400 mt-1">⚠️ The manager will review the critical issues.</p>
+                      )}
+                    </div>
                   </>
                 ) : totalWarnings > 0 ? (
                   <>
@@ -730,7 +745,7 @@ export default function ShopDrawingQC() {
                       <p className="text-sm text-pink-400">{submitError}</p>
                     )}
                     <button
-                      disabled={totalIssues > 0 || !projectNameOverride.trim() || isSubmitting || (renderUrl !== undefined && !renderUrlConfirmed)}
+                      disabled={(totalIssues > 0 && !overrideIssues) || !projectNameOverride.trim() || isSubmitting || (renderUrl !== undefined && !renderUrlConfirmed)}
                       onClick={async () => {
                         // If render URL not yet checked, check now
                         if (renderUrl === undefined && projectNameOverride.trim()) {
@@ -743,6 +758,7 @@ export default function ShopDrawingQC() {
                             }
                           } catch {}
                           setCheckingProject(false);
+    setOverrideIssues(false);
                           return; // Let user confirm render URL before continuing
                         }
                         setIsSubmitting(true);
@@ -758,6 +774,8 @@ export default function ShopDrawingQC() {
                               pdfBlobUrl,
                               designerNotes,
                               renderUrl: newRenderUrl || renderUrl,
+                              overrideIssues,
+                              criticalIssues: overrideIssues ? results.criticalIssues : [],
                             }),
                           });
                           const data = await res.json();
@@ -773,7 +791,7 @@ export default function ShopDrawingQC() {
                         }
                       }}
                       className={`px-8 py-3 rounded-xl font-bold text-lg flex items-center justify-center gap-2 transition-colors ${
-                        totalIssues > 0 || !projectNameOverride.trim() || isSubmitting || (renderUrl !== undefined && !renderUrlConfirmed)
+                        (totalIssues > 0 && !overrideIssues) || !projectNameOverride.trim() || isSubmitting || (renderUrl !== undefined && !renderUrlConfirmed)
                           ? 'bg-gray-800 text-gray-500 cursor-not-allowed'
                           : 'bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-400 hover:to-pink-400 text-black'
                       }`}
