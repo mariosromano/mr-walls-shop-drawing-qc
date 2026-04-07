@@ -635,7 +635,7 @@ export default function ShopDrawingQC() {
                   <>
                     <XCircle className="text-pink-400" size={28} />
                     <div>
-                      <span className="font-semibold text-lg text-pink-400">{totalIssues} critical issue{totalIssues > 1 ? \'s\' : \'\' } found</span>
+                      <span className="font-semibold text-lg text-pink-400">{totalIssues} critical issue{totalIssues > 1 ? 's' : ''} found</span>
                       {!overrideIssues && (
                         <button
                           onClick={() => setOverrideIssues(true)}
