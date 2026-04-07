@@ -732,6 +732,19 @@ export default function ShopDrawingQC() {
                     <button
                       disabled={totalIssues > 0 || !projectNameOverride.trim() || isSubmitting || (renderUrl !== undefined && !renderUrlConfirmed)}
                       onClick={async () => {
+                        // If render URL not yet checked, check now
+                        if (renderUrl === undefined && projectNameOverride.trim()) {
+                          setCheckingProject(true);
+                          try {
+                            const checkRes = await fetch(`/api/check-project?name=${encodeURIComponent(projectNameOverride.trim())}`);
+                            const checkData = await checkRes.json();
+                            if (checkData.found) {
+                              setRenderUrl(checkData.renderUrl || null);
+                            }
+                          } catch {}
+                          setCheckingProject(false);
+                          return; // Let user confirm render URL before continuing
+                        }
                         setIsSubmitting(true);
                         setSubmitError(null);
                         try {
