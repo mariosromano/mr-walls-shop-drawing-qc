@@ -144,10 +144,25 @@ export async function POST(req: NextRequest) {
       ``,
     ].filter(l => l !== '').join('\n');
 
-    await slackPost('canvases.edit', {
+    // Find the current LATEST entry (🆕) to insert before it
+    const sectionsRes = await slackPost('canvases.sections.lookup', {
       canvas_id: canvasId,
-      changes: [{ operation: 'insert_at_end', document_content: { type: 'markdown', markdown: canvasEntry } }],
+      criteria: { contains_text: '\uD83C\uDD95' }, // 🆕 emoji
     });
+    const latestSectionId = sectionsRes.sections?.[0]?.id;
+
+    if (latestSectionId) {
+      await slackPost('canvases.edit', {
+        canvas_id: canvasId,
+        changes: [{ operation: 'insert_before', section_id: latestSectionId, document_content: { type: 'markdown', markdown: canvasEntry } }],
+      });
+    } else {
+      // First ever entry — just append
+      await slackPost('canvases.edit', {
+        canvas_id: canvasId,
+        changes: [{ operation: 'insert_at_end', document_content: { type: 'markdown', markdown: canvasEntry } }],
+      });
+    }
   }
 
   // 4. Short channel notification
