@@ -165,6 +165,7 @@ export async function POST(req: NextRequest) {
       'Designer Slack ID': designerSlackId || '',
       'Manager Slack ID': managerSlackId || '',
       'PDF URL': filePermalink || '',
+      'PDF Blob URL': pdfBlobUrl || '',
       'Status': 'Pending',
     }}),
   });
