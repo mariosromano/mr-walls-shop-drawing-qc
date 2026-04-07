@@ -580,6 +580,8 @@ export default function ShopDrawingQC() {
   // ==================== RESULTS STEP ====================
   if (step === 'results' && results) {
     const totalIssues = results.criticalIssues?.length || 0;
+    const hasFilenameError = results.criticalIssues?.some((i: {id: string}) => i.id === 'filename') || false;
+    const canOverride = totalIssues > 0 && !hasFilenameError;
     const totalWarnings = results.warnings?.length || 0;
     const totalPassed = results.passed?.length || 0;
     const totalManual = results.manualReview?.length || 0;
@@ -636,13 +638,16 @@ export default function ShopDrawingQC() {
                     <XCircle className="text-pink-400" size={28} />
                     <div>
                       <span className="font-semibold text-lg text-pink-400">{totalIssues} critical issue{totalIssues > 1 ? 's' : ''} found</span>
-                      {!overrideIssues && (
+                      {!overrideIssues && canOverride && (
                         <button
                           onClick={() => setOverrideIssues(true)}
                           className="ml-3 text-xs text-gray-500 hover:text-gray-300 underline transition-colors"
                         >
                           Submit anyway
                         </button>
+                      )}
+                      {hasFilenameError && (
+                        <p className="text-xs text-red-400 mt-1">PDF filename format must be fixed before submitting.</p>
                       )}
                       {overrideIssues && (
                         <p className="text-xs text-yellow-400 mt-1">⚠️ The manager will review the critical issues.</p>
@@ -745,7 +750,7 @@ export default function ShopDrawingQC() {
                       <p className="text-sm text-pink-400">{submitError}</p>
                     )}
                     <button
-                      disabled={(totalIssues > 0 && !overrideIssues) || !projectNameOverride.trim() || isSubmitting || (renderUrl !== undefined && !renderUrlConfirmed)}
+                      disabled={(totalIssues > 0 && (!overrideIssues || hasFilenameError)) || !projectNameOverride.trim() || isSubmitting || (renderUrl !== undefined && !renderUrlConfirmed)}
                       onClick={async () => {
                         // If render URL not yet checked, check now
                         if (renderUrl === undefined && projectNameOverride.trim()) {
@@ -791,7 +796,7 @@ export default function ShopDrawingQC() {
                         }
                       }}
                       className={`px-8 py-3 rounded-xl font-bold text-lg flex items-center justify-center gap-2 transition-colors ${
-                        (totalIssues > 0 && !overrideIssues) || !projectNameOverride.trim() || isSubmitting || (renderUrl !== undefined && !renderUrlConfirmed)
+                        (totalIssues > 0 && (!overrideIssues || hasFilenameError)) || !projectNameOverride.trim() || isSubmitting || (renderUrl !== undefined && !renderUrlConfirmed)
                           ? 'bg-gray-800 text-gray-500 cursor-not-allowed'
                           : 'bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-400 hover:to-pink-400 text-black'
                       }`}
