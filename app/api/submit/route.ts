@@ -82,7 +82,7 @@ async function uploadPdfToSlack(channelId: string, pdfUrl: string, filename: str
 }
 
 export async function POST(req: NextRequest) {
-  const { projectName, filename, results, pdfBlobUrl } = await req.json();
+  const { projectName, filename, results, pdfBlobUrl, designerNotes } = await req.json();
   if (!projectName) return NextResponse.json({ error: 'Project name is required' }, { status: 400 });
 
   // 1. Look up project
@@ -131,6 +131,7 @@ export async function POST(req: NextRequest) {
       `**Submitted:** ${now} at ${nowTime} PT${drawnBy ? `  |  **By:** ${drawnBy}` : ''}`,
       `**QC:** ✅ ${passed} passed  ⚠️ ${warnings} warnings  👁️ ${manual} manual`,
       `**Status:** ⏳ Pending manager review`,
+      designerNotes ? `**Notes:** ${designerNotes}` : '',
       filePermalink ? `[📎 Open PDF](${filePermalink})` : '',
       `\n---\n`,
     ].filter(l => l !== '').join('\n');
@@ -148,7 +149,8 @@ export async function POST(req: NextRequest) {
   }
 
   // 4. Post to channel — this message becomes the review thread
-  const channelMsg = `${managerMention} Shop drawing ready for review — *${fullProjectName}*\n📄 ${filename}${version ? `  •  ${version}` : ''}\n*QC:* ✅ ${passed} passed  ⚠️ ${warnings} warnings\n\nPDF added to the Revisions and Updates canvas.\n_Reply in this thread to approve or describe revisions._`;
+  const notesPart = designerNotes ? `\n📝 *Notes:* ${designerNotes}` : '';
+  const channelMsg = `${managerMention} Shop drawing ready for review — *${fullProjectName}*\n📄 ${filename}${version ? `  •  ${version}` : ''}\n*QC:* ✅ ${passed} passed  ⚠️ ${warnings} warnings\n\nPDF added to the Revisions and Updates canvas.\n_Reply in this thread to approve or describe revisions._${notesPart}`;
   const msgRes = await slackPost('chat.postMessage', { channel: slackChannelId, text: channelMsg });
   const messageTs = msgRes.ts;
 
@@ -166,6 +168,7 @@ export async function POST(req: NextRequest) {
       'Manager Slack ID': managerSlackId || '',
       'PDF URL': filePermalink || '',
       'PDF Blob URL': pdfBlobUrl || '',
+      'Designer Notes': designerNotes || '',
       'Status': 'Pending',
     }}),
   });

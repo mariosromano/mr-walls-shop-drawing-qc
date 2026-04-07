@@ -152,6 +152,7 @@ export default function ShopDrawingQC() {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [pdfBlobUrl, setPdfBlobUrl] = useState<string | null>(null);
+  const [designerNotes, setDesignerNotes] = useState('');
   const reviewerPickerRef = useRef<HTMLDivElement>(null);
 
   // Close reviewer picker when clicking outside
@@ -312,6 +313,7 @@ export default function ShopDrawingQC() {
     setSubmitError(null);
     setIsSubmitting(false);
     setPdfBlobUrl(null);
+    setDesignerNotes('');
   };
 
   const formatSize = (bytes: number): string => {
@@ -515,7 +517,18 @@ export default function ShopDrawingQC() {
             })}
           </div>
 
-          <div className="flex gap-4">
+          <div className="mt-4">
+            <label className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2 block">Additional Notes <span className="text-gray-600 font-normal normal-case">(optional)</span></label>
+            <textarea
+              value={designerNotes}
+              onChange={(e) => setDesignerNotes(e.target.value)}
+              placeholder="Any notes for the manager about this drawing..."
+              rows={3}
+              className="w-full px-4 py-3 rounded-xl bg-gray-900 border border-gray-800 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-orange-500 resize-none"
+            />
+          </div>
+
+                    <div className="flex gap-4">
             <button onClick={() => setStep('upload')} className="px-8 py-4 border border-gray-700 text-gray-300 font-medium rounded-xl hover:bg-gray-900 transition-colors">
               Back
             </button>
@@ -660,6 +673,7 @@ export default function ShopDrawingQC() {
                               filename: file?.name || '',
                               results,
                               pdfBlobUrl,
+                              designerNotes,
                             }),
                           });
                           const data = await res.json();
