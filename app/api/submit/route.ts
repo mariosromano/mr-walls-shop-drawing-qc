@@ -142,6 +142,7 @@ export async function POST(req: NextRequest) {
       `**QC:** ✅ ${passed} passed  ⚠️ ${warnings} warnings  👁️ ${manual} manual`,
       `**Status:** ⏳ Pending manager review`,
       designerNotes ? `**Notes:** ${designerNotes}` : '',
+      renderUrl ? `**Render Folder:** [Open](${renderUrl})` : '',
       filePermalink ? `[📎 Open PDF](${filePermalink})` : '',
       `\n---\n`,
     ].filter(l => l !== '').join('\n');
@@ -160,7 +161,8 @@ export async function POST(req: NextRequest) {
 
   // 4. Post to channel — this message becomes the review thread
   const notesPart = designerNotes ? `\n📝 *Notes:* ${designerNotes}` : '';
-  const channelMsg = `${managerMention} Shop drawing ready for review — *${fullProjectName}*\n📄 ${filename}${version ? `  •  ${version}` : ''}\n*QC:* ✅ ${passed} passed  ⚠️ ${warnings} warnings\n\nPDF added to the Revisions and Updates canvas.\n_Reply in this thread to approve or describe revisions._${notesPart}`;
+  const renderPart = renderUrl ? `\n📁 *Render Folder:* <${renderUrl}|Open>` : '';
+  const channelMsg = `${managerMention} Shop drawing ready for review — *${fullProjectName}*\n📄 ${filename}${version ? `  •  ${version}` : ''}\n*QC:* ✅ ${passed} passed  ⚠️ ${warnings} warnings\n\nPDF added to the Revisions and Updates canvas.\n_Reply in this thread to approve or describe revisions._${notesPart}${renderPart}`;
   const msgRes = await slackPost('chat.postMessage', { channel: slackChannelId, text: channelMsg });
   const messageTs = msgRes.ts;
 
@@ -179,6 +181,7 @@ export async function POST(req: NextRequest) {
       'PDF URL': filePermalink || '',
       'PDF Blob URL': pdfBlobUrl || '',
       'Designer Notes': designerNotes || '',
+      'Render URL Used': renderUrl || '',
       'Status': 'Pending',
     }}),
   });
