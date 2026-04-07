@@ -164,6 +164,7 @@ export async function POST(req: NextRequest) {
       'Project Record ID': airtableRecordId,
       'Designer Slack ID': designerSlackId || '',
       'Manager Slack ID': managerSlackId || '',
+      'PDF URL': filePermalink || '',
       'Status': 'Pending',
     }}),
   });
