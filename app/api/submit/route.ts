@@ -144,20 +144,21 @@ export async function POST(req: NextRequest) {
       ``,
     ].filter(l => l !== '').join('\n');
 
-    // Find the current LATEST entry (🆕) to insert before it
-    const sectionsRes = await slackPost('canvases.sections.lookup', {
+    // Find the first section of the current latest entry (🆕) to insert before it
+    const existingRes = await slackPost('canvases.sections.lookup', {
       canvas_id: canvasId,
-      criteria: { contains_text: '\uD83C\uDD95' }, // 🆕 emoji
+      criteria: { contains_text: '\uD83C\uDD95' }, // search for 🆕 emoji
     });
-    const latestSectionId = sectionsRes.sections?.[0]?.id;
+    const firstExistingId = existingRes.sections?.[0]?.id;
 
-    if (latestSectionId) {
+    if (firstExistingId) {
+      // Insert new entry before the current first section → newest at top
       await slackPost('canvases.edit', {
         canvas_id: canvasId,
-        changes: [{ operation: 'insert_before', section_id: latestSectionId, document_content: { type: 'markdown', markdown: canvasEntry } }],
+        changes: [{ operation: 'insert_before', section_id: firstExistingId, document_content: { type: 'markdown', markdown: canvasEntry } }],
       });
     } else {
-      // First ever entry — just append
+      // No existing entries yet — just append
       await slackPost('canvases.edit', {
         canvas_id: canvasId,
         changes: [{ operation: 'insert_at_end', document_content: { type: 'markdown', markdown: canvasEntry } }],
