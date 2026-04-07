@@ -134,7 +134,7 @@ export async function POST(req: NextRequest) {
 
     // Append to canvas
     const canvasEntry = [
-      `## 📄 ${filename}${version ? ` — ${version}` : ''}`,
+      `## 🆕 ${filename}${version ? ` — ${version}` : ''}`,
       `**Submitted:** ${now} at ${nowTime} PT${drawnBy ? `  |  **By:** ${drawnBy}` : ''}`,
       `**QC:** ✅ ${passed} passed  ⚠️ ${warnings} warnings  👁️ ${manual} manual`,
       `**Status:** ⏳ Pending manager review`,
@@ -144,26 +144,10 @@ export async function POST(req: NextRequest) {
       ``,
     ].filter(l => l !== '').join('\n');
 
-    // Find the first existing entry to insert before it (newest at top)
-    const sectionsRes = await slackPost('canvases.sections.lookup', {
+    await slackPost('canvases.edit', {
       canvas_id: canvasId,
-      criteria: { contains_text: 'Shop Drawing' },
+      changes: [{ operation: 'insert_at_end', document_content: { type: 'markdown', markdown: canvasEntry } }],
     });
-    const firstEntryId = sectionsRes.sections?.[0]?.id;
-
-    if (firstEntryId) {
-      // Insert before the first existing entry so newest is at top
-      await slackPost('canvases.edit', {
-        canvas_id: canvasId,
-        changes: [{ operation: 'insert_before', section_id: firstEntryId, document_content: { type: 'markdown', markdown: canvasEntry } }],
-      });
-    } else {
-      // No existing entries — just append
-      await slackPost('canvases.edit', {
-        canvas_id: canvasId,
-        changes: [{ operation: 'insert_at_end', document_content: { type: 'markdown', markdown: canvasEntry } }],
-      });
-    }
   }
 
   // 4. Short channel notification
