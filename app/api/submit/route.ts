@@ -32,11 +32,19 @@ async function getOrCreateCanvas(channelId: string): Promise<string | null> {
     headers: { Authorization: `Bearer ${SLACK_BOT_TOKEN}` },
   });
   const info = await res.json();
-  const tabs: Array<{ type: string; label?: string; data?: { file_id: string } }> =
-    info.channel?.properties?.tabs || [];
-  const existing = tabs.find(t => t.type === 'canvas' && t.label === 'Revisions and Updates');
+  
+  // Check both tabs and tabz for the labeled canvas
+  const tabSources = [
+    ...(info.channel?.properties?.tabs || []),
+    ...(info.channel?.properties?.tabz || []),
+  ];
+  const existing = tabSources.find(
+    (t: { type: string; label?: string; data?: { file_id: string } }) =>
+      t.type === 'canvas' && t.label === 'Revisions and Updates' && t.data?.file_id
+  );
   if (existing?.data?.file_id) return existing.data.file_id;
 
+  // Only create if truly none found
   const created = await slackPost('conversations.canvases.create', {
     channel_id: channelId,
     document_content: { type: 'markdown', markdown: '# Revisions and Updates\n\nShop drawing submissions and revision history.\n' },
