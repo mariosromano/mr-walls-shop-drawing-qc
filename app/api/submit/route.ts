@@ -63,10 +63,20 @@ async function uploadPdfToSlack(channelId: string, pdfUrl: string, filename: str
       body: bytes,
     });
 
-    // Complete without channel_id so it doesn't post to channel
+    // Complete WITH channel_id so the permalink is accessible to all channel members
     const completeRes = await slackPost('files.completeUploadExternal', {
       files: [{ id: uploadUrlRes.file_id, title: filename }],
+      channel_id: channelId,
     });
+    // Try to silently delete the auto-posted file message so it doesn't clutter the channel
+    try {
+      const fileMsg = completeRes.files?.[0];
+      const shares = fileMsg?.shares?.private || fileMsg?.shares?.public || {};
+      const shareList = Object.values(shares as Record<string, Array<{ts: string}>>)[0];
+      if (shareList?.[0]?.ts) {
+        await slackPost('chat.delete', { channel: channelId, ts: shareList[0].ts });
+      }
+    } catch {}
     return completeRes.files?.[0]?.permalink || null;
   } catch { return null; }
 }
