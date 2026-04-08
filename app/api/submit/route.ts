@@ -14,7 +14,7 @@ const STAFF_RECORD_TO_SLACK: Record<string, string> = {
   'recxr2enNUGe1GLg3': 'U022LHAS5HB', // Kamila
   'rec2I819qhRyvObdl': 'U02B4GJQEA1', // Sawyer
   'recYwVvHGYKxcqw1R': 'U08BXDJLA6M', // Mindy
-  'recqQrGFFV1Cehe2g': 'U08QJUG0L23', // Emma
+  'recqQrGFFV1Cehe2g': 'U05RDF4BFLZ', // Emma Ruiz
   'reczrVcIbdWDPtdvY': 'U08QJUG0L23', // Belen (same Slack as Emma for now — TODO verify)
 };
 
