@@ -15,7 +15,8 @@ const STAFF_RECORD_TO_SLACK: Record<string, string> = {
   'rec2I819qhRyvObdl': 'U02B4GJQEA1', // Sawyer
   'recYwVvHGYKxcqw1R': 'U08BXDJLA6M', // Mindy
   'recqQrGFFV1Cehe2g': 'U05RDF4BFLZ', // Emma Ruiz
-  'reczrVcIbdWDPtdvY': 'U08QJUG0L23', // Belen (same Slack as Emma for now — TODO verify)
+  'reczrVcIbdWDPtdvY': 'U08QJUG0L23', // Belen Cicchi
+  'rec11tfbDYksclMWj': 'U07L17NHS8G', // Victor Villavincencio
 };
 
 async function slackPost(path: string, body: object) {
