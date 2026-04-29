@@ -44,10 +44,10 @@ const CHECKLIST_PROMPT = `Analyze this shop drawing PDF against the following ch
 - Scales consistent across similar details on same page: PASS/FAIL
 
 ### 6. BACKLIT REQUIREMENTS (apply ONLY if the user indicated this is a backlit project — do NOT auto-detect):
-- "REQUIRED: M|R Wall needs 3" gap for proper LED light diffusion" note present: PASS/FAIL
-- LED access method shown — either a 3" gap OR an access panel: PASS/FAIL
-- "removable for LED access" OR "access panel for LED maintenance" OR "glued with silicone for removability" note present: PASS/FAIL
-- "Full set of install diagrams will be provided once final shop drawings have been approved" note present: PASS/FAIL
+- 3" LED gap note present — any note indicating a required 3" gap for LED light diffusion (exact wording varies, e.g. "REQUIRED 3\" gap for light diffusion" or "needs 3\" gap for LED diffusion"): PASS/FAIL
+- LED access method shown — either a 3" gap OR a removable/access panel for LED maintenance: PASS/FAIL
+- Removable panel or LED access note present — any note indicating panels are removable or provide access for LED maintenance (e.g. "removable panel on left and right side for LED access", "removable for LED access", "access panel", "glued with silicone for removability"): PASS/FAIL
+- Install diagrams note present — any note indicating that install/framing diagrams will be provided after shop drawing approval (exact wording varies, e.g. "install diagrams will be provided following shop drawing approval"): PASS/FAIL
 - If NOT a backlit project and no backlit features detected: mark all as N/A
 
 ### 7. SITUATIONAL
