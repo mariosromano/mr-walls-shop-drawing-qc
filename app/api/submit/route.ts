@@ -53,7 +53,9 @@ async function getOrCreateCanvas(channelId: string): Promise<string | null> {
   return created.canvas_id || null;
 }
 
-async function uploadPdfToSlack(channelId: string, pdfUrl: string, filename: string): Promise<string | null> {
+// Step 1: Upload bytes to Slack's external upload URL, return the file_id without completing.
+// This avoids auto-posting a file message to the channel.
+async function prepareSlackUpload(pdfUrl: string, filename: string): Promise<{fileId: string} | null> {
   try {
     const pdfRes = await fetch(pdfUrl);
     if (!pdfRes.ok) return null;
@@ -72,20 +74,19 @@ async function uploadPdfToSlack(channelId: string, pdfUrl: string, filename: str
       body: bytes,
     });
 
-    // Complete WITH channel_id so the permalink is accessible to all channel members
+    return { fileId: uploadUrlRes.file_id };
+  } catch { return null; }
+}
+
+// Step 2: Complete the upload into a specific thread so the file appears
+// as a thread reply (not a standalone channel message).
+async function completeUploadInThread(channelId: string, threadTs: string, fileId: string, filename: string): Promise<string | null> {
+  try {
     const completeRes = await slackPost('files.completeUploadExternal', {
-      files: [{ id: uploadUrlRes.file_id, title: filename }],
+      files: [{ id: fileId, title: filename }],
       channel_id: channelId,
+      thread_ts: threadTs,
     });
-    // Try to silently delete the auto-posted file message so it doesn't clutter the channel
-    try {
-      const fileMsg = completeRes.files?.[0];
-      const shares = fileMsg?.shares?.private || fileMsg?.shares?.public || {};
-      const shareList = Object.values(shares as Record<string, Array<{ts: string}>>)[0];
-      if (shareList?.[0]?.ts) {
-        await slackPost('chat.delete', { channel: channelId, ts: shareList[0].ts });
-      }
-    } catch {}
     return completeRes.files?.[0]?.permalink || null;
   } catch { return null; }
 }
@@ -138,11 +139,11 @@ export async function POST(req: NextRequest) {
   const now = nowDate.toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' });
   const nowTime = nowDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Los_Angeles' });
 
-  // 2. Upload PDF (stored silently)
-  let filePermalink: string | null = null;
-  if (pdfBlobUrl) filePermalink = await uploadPdfToSlack(slackChannelId, pdfBlobUrl, filename);
+  // 2. Prepare PDF upload (bytes uploaded but NOT yet completed — avoids auto-posting to channel)
+  let pendingUpload: {fileId: string} | null = null;
+  if (pdfBlobUrl) pendingUpload = await prepareSlackUpload(pdfBlobUrl, filename);
 
-  // 3. Update canvas
+  // 3. Update canvas (file permalink added after message post)
   const canvasId = await getOrCreateCanvas(slackChannelId);
   if (canvasId) {
     const canvasEntry = [
@@ -153,7 +154,7 @@ export async function POST(req: NextRequest) {
       (overrideIssues && criticalIssues?.length > 0) ? `**⚠️ Submitted with ${criticalIssues.length} critical issue(s) — manager review required**` : '',
       designerNotes ? `**Notes:** ${designerNotes}` : '',
       renderUrl ? `**Render Folder:** [Open](${renderUrl})` : '',
-      filePermalink ? `[📎 Open PDF](${filePermalink})` : '',
+      pdfBlobUrl ? `[📎 Open PDF](${pdfBlobUrl})` : '',
       `\n---\n`,
     ].filter(l => l !== '').join('\n');
 
@@ -169,7 +170,7 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // 4. Post to channel — this message becomes the review thread
+  // 4. Post to channel — ONE message, becomes the review thread
   const criticalPart = (overrideIssues && criticalIssues?.length > 0)
     ? `\n⚠️ *Submitted with ${criticalIssues.length} critical issue(s) — manager review required:*\n` +
       criticalIssues.map((i: {label: string; notes: string}) => `• *${i.label}:* ${i.notes}`).join('\n')
@@ -179,6 +180,12 @@ export async function POST(req: NextRequest) {
   const channelMsg = `${managerMention} Shop drawing ready for review — *${fullProjectName}*\n📄 ${filename}${version ? `  •  ${version}` : ''}\n*QC:* ✅ ${passed} passed  ⚠️ ${warnings} warnings\n\nPDF added to the Revisions and Updates canvas.\n_Reply in this thread to approve or describe revisions._${criticalPart}${notesPart}${renderPart}`;
   const msgRes = await slackPost('chat.postMessage', { channel: slackChannelId, text: channelMsg });
   const messageTs = msgRes.ts;
+
+  // 4b. Now complete the PDF upload INTO the thread (file appears as thread reply, not a new channel message)
+  let filePermalink: string | null = null;
+  if (pendingUpload && messageTs) {
+    filePermalink = await completeUploadInThread(slackChannelId, messageTs, pendingUpload.fileId, filename);
+  }
 
   // 5. Save to SD Reviews table
   await fetch(`https://api.airtable.com/v0/${BASE_ID}/${SD_REVIEWS_TABLE}`, {
