@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Jimi's Task Board 🎸</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #0f0f0f;
+      color: #f0f0f0;
+      min-height: 100vh;
+    }
+
+    header {
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      border-bottom: 2px solid #7c3aed;
+      padding: 24px 32px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    header .logo { font-size: 2.4rem; }
+
+    header h1 {
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: -0.5px;
+    }
+
+    header p {
+      font-size: 0.85rem;
+      color: #a0aec0;
+      margin-top: 2px;
+    }
+
+    header .badge {
+      margin-left: auto;
+      background: #7c3aed;
+      color: #fff;
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 4px 12px;
+      border-radius: 20px;
+      letter-spacing: 0.5px;
+    }
+
+    .stats-bar {
+      display: flex;
+      gap: 20px;
+      padding: 24px 32px 0;
+    }
+
+    .stat {
+      background: #1a1a1a;
+      border: 1px solid #2a2a2a;
+      border-radius: 10px;
+      padding: 14px 20px;
+      flex: 1;
+      text-align: center;
+    }
+
+    .stat .val {
+      font-size: 1.8rem;
+      font-weight: 800;
+      color: #7c3aed;
+    }
+
+    .stat .lbl {
+      font-size: 0.75rem;
+      color: #666;
+      margin-top: 2px;
+    }
+
+    .board {
+      display: flex;
+      gap: 20px;
+      padding: 24px 32px 32px;
+      overflow-x: auto;
+      align-items: flex-start;
+    }
+
+    .column {
+      background: #1a1a1a;
+      border-radius: 14px;
+      border: 1px solid #2a2a2a;
+      min-width: 272px;
+      max-width: 272px;
+      flex-shrink: 0;
+    }
+
+    .column-header {
+      padding: 16px 18px 12px;
+      border-bottom: 1px solid #2a2a2a;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .column-header .col-icon { font-size: 1.1rem; }
+
+    .column-header h2 {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: #fff;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+    }
+
+    .col-count {
+      margin-left: auto;
+      background: #2a2a2a;
+      color: #a0aec0;
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 10px;
+    }
+
+    .column-body {
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .card {
+      background: #242424;
+      border: 1px solid #333;
+      border-radius: 10px;
+      padding: 13px 14px;
+      transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s;
+      cursor: default;
+      position: relative;
+    }
+
+    .card:hover {
+      transform: translateY(-2px);
+      border-color: #7c3aed;
+      box-shadow: 0 4px 20px rgba(124, 58, 237, 0.15);
+    }
+
+    .card-label {
+      display: inline-block;
+      font-size: 0.67rem;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      padding: 2px 8px;
+      border-radius: 6px;
+      margin-bottom: 7px;
+      text-transform: uppercase;
+    }
+
+    .card h3 {
+      font-size: 0.86rem;
+      font-weight: 600;
+      color: #f0f0f0;
+      line-height: 1.3;
+      margin-bottom: 5px;
+    }
+
+    .card p {
+      font-size: 0.77rem;
+      color: #777;
+      line-height: 1.5;
+    }
+
+    .card-footer {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 9px;
+      padding-top: 9px;
+      border-top: 1px solid #333;
+    }
+
+    .agent-chip {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      background: #2a2a2a;
+      border-radius: 6px;
+      padding: 3px 8px;
+      font-size: 0.69rem;
+      color: #a0aec0;
+      font-weight: 500;
+    }
+
+    .trigger-chip {
+      margin-left: auto;
+      font-size: 0.67rem;
+      color: #555;
+      font-style: italic;
+    }
+
+    /* Label colors */
+    .lbl-project  { background: #1e3a5f; color: #60a5fa; }
+    .lbl-shipping { background: #1e3d2f; color: #34d399; }
+    .lbl-assets   { background: #3d1e5f; color: #c084fc; }
+    .lbl-monitor  { background: #3d2a1e; color: #fb923c; }
+    .lbl-comms    { background: #3d1e1e; color: #f87171; }
+    .lbl-subagent { background: #1e3d3d; color: #2dd4bf; }
+    .lbl-data     { background: #3d3d1e; color: #fbbf24; }
+
+    /* Column accent border */
+    .col-jimi    .column-header { border-left: 3px solid #7c3aed; }
+    .col-indy    .column-header { border-left: 3px solid #f59e0b; }
+    .col-parcel  .column-header { border-left: 3px solid #34d399; }
+    .col-athena  .column-header { border-left: 3px solid #2dd4bf; }
+    .col-monitor .column-header { border-left: 3px solid #fb923c; }
+
+    /* Subagent card tints */
+    .card.indy-card    { background: #1e1c14; border-color: #3a3018; }
+    .card.parcel-card  { background: #141e1a; border-color: #1e3a2a; }
+    .card.athena-card  { background: #14201e; border-color: #1a3a38; }
+
+    .subagent-badge {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      font-size: 0.68rem;
+      padding: 2px 7px;
+      border-radius: 6px;
+      font-weight: 600;
+      border: 1px solid;
+    }
+
+    .badge-indy   { background: #f59e0b22; color: #f59e0b; border-color: #f59e0b44; }
+    .badge-parcel { background: #34d39922; color: #34d399; border-color: #34d39944; }
+    .badge-athena { background: #2dd4bf22; color: #2dd4bf; border-color: #2dd4bf44; }
+
+    footer {
+      text-align: center;
+      padding: 20px;
+      color: #444;
+      font-size: 0.75rem;
+    }
+
+    .active-dot {
+      display: inline-block;
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #fb923c;
+      margin-right: 3px;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">🎸</div>
+  <div>
+    <h1>M|R Walls · Agent Task Board</h1>
+    <p>All tasks run by Jimi, Indy, Parcel &amp; Athena</p>
+  </div>
+  <div class="badge">LIVE</div>
+</header>
+
+<div class="stats-bar">
+  <div class="stat"><div class="val">20</div><div class="lbl">Total Tasks</div></div>
+  <div class="stat"><div class="val">4</div><div class="lbl">Agents</div></div>
+  <div class="stat"><div class="val">5</div><div class="lbl">Columns</div></div>
+  <div class="stat"><div class="val">1</div><div class="lbl">Active Watch</div></div>
+</div>
+
+<div class="board">
+
+  <!-- JIMI -->
+  <div class="column col-jimi">
+    <div class="column-header">
+      <span class="col-icon">🎸</span>
+      <h2>Jimi</h2>
+      <span class="col-count">6</span>
+    </div>
+    <div class="column-body">
+
+      <div class="card">
+        <span class="card-label lbl-assets">Dash DAM</span>
+        <h3>Google Photos → Dash Upload</h3>
+        <p>Scrape album, upload photos, set metadata, tag Backlight, transition to LIVE.</p>
+        <div class="card-footer">
+          <div class="agent-chip">🎸 Jimi</div>
+          <span class="trigger-chip">On request</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <span class="card-label lbl-assets">Shop Drawing</span>
+        <h3>Shop Drawing QC Check</h3>
+        <p>Run drawing through QC checker, score Pass / Warning / Critical / Manual.</p>
+        <div class="card-footer">
+          <div class="agent-chip">🎸 Jimi</div>
+          <span class="trigger-chip">On submission</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <span class="card-label lbl-assets">Shop Drawing</span>
+        <h3>Log Drawing Approval</h3>
+        <p>Create Notes Log entry (Designer-Submission) with PDF + render folder link.</p>
+        <div class="card-footer">
+          <div class="agent-chip">🎸 Jimi</div>
+          <span class="trigger-chip">Post-approval</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <span class="card-label lbl-data">Airtable</span>
+        <h3>BOL Airtable Input</h3>
+        <p>Parse Bill of Lading PDF and enter shipping data into Airtable records.</p>
+        <div class="card-footer">
+          <div class="agent-chip">🎸 Jimi</div>
+          <span class="trigger-chip">On BOL receipt</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <span class="card-label lbl-data">Notes Log</span>
+        <h3>Log Notes to Airtable</h3>
+        <p>Create Notes Log entries with staff, type &amp; Slack submission flag.</p>
+        <div class="card-footer">
+          <div class="agent-chip">🎸 Jimi</div>
+          <span class="trigger-chip">Ongoing</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <span class="card-label lbl-comms">Discord</span>
+        <h3>Discord Channel Actions</h3>
+        <p>Read, send, react, pin, create threads, manage channels across the server.</p>
+        <div class="card-footer">
+          <div class="agent-chip">🎸 Jimi</div>
+          <span class="trigger-chip">On request</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- INDY -->
+  <div class="column col-indy">
+    <div class="column-header">
+      <span class="col-icon">🐍</span>
+      <h2>Indy</h2>
+      <span class="col-count">6</span>
+    </div>
+    <div class="column-body">
+
+      <div class="card indy-card">
+        <div class="subagent-badge badge-indy">SUBAGENT</div>
+        <span class="card-label lbl-project">Airtable</span>
+        <h3>Mark Project as Done</h3>
+        <p>Complete all tasks, close phases, create Done phase, archive Slack channel.</p>
+        <div class="card-footer">
+          <div class="agent-chip">🐍 Indy</div>
+          <span class="trigger-chip">Carlo triggers</span>
+        </div>
+      </div>
+
+      <div class="card indy-card">
+        <div class="subagent-badge badge-indy">SUBAGENT</div>
+        <span class="card-label lbl-project">Airtable</span>
+        <h3>Paid In Full Workflow</h3>
+        <p>Set Paid field, mark Final Balance task complete, log note to Notes Log.</p>
+        <div class="card-footer">
+          <div class="agent-chip">🐍 Indy</div>
+          <span class="trigger-chip">Carlo triggers</span>
+        </div>
+      </div>
+
+      <div class="card indy-card">
+        <div class="subagent-badge badge-indy">SUBAGENT</div>
+        <span class="card-label lbl-project">Airtable</span>
+        <h3>Archive SPEC DA Channel</h3>
+        <p>Move project to archive phase, update Airtable, archive Slack channel.</p>
+        <div class="card-footer">
+          <div class="agent-chip">🐍 Indy</div>
+          <span class="trigger-chip">Carlo triggers</span>
+        </div>
+      </div>
+
+      <div class="card indy-card">
+        <div class="subagent-badge badge-indy">SUBAGENT</div>
+        <span class="card-label lbl-monitor">Slack</span>
+        <h3>Carlo's Daily Digest</h3>
+        <p>Monitors all Slack channels, filters noise, DMs Carlo what actually matters.</p>
+        <div class="card-footer">
+          <div class="agent-chip">🐍 Indy</div>
+          <span class="trigger-chip">Ongoing</span>
+        </div>
+      </div>
+
+      <div class="card indy-card">
+        <div class="subagent-badge badge-indy">SUBAGENT</div>
+        <span class="card-label lbl-comms">Gmail</span>
+        <h3>Carlo Email Drafting</h3>
+        <p>Reads carlo@marioromano.com, drafts replies — Carlo approves before sending.</p>
+        <div class="card-footer">
+          <div class="agent-chip">🐍 Indy</div>
+          <span class="trigger-chip">On request</span>
+        </div>
+      </div>
+
+      <div class="card indy-card">
+        <div class="subagent-badge badge-indy">SUBAGENT</div>
+        <span class="card-label lbl-project">Airtable</span>
+        <h3>5-Day No-Action Nudge</h3>
+        <p>Check Custom Reminder Date → send Slack update request if overdue.</p>
+        <div class="card-footer">
+          <div class="agent-chip">🐍 Indy</div>
+          <span class="trigger-chip">Scheduled</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- PARCEL -->
+  <div class="column col-parcel">
+    <div class="column-header">
+      <span class="col-icon">📦</span>
+      <h2>Parcel</h2>
+      <span class="col-count">4</span>
+    </div>
+    <div class="column-body">
+
+      <div class="card parcel-card">
+        <div class="subagent-badge badge-parcel">SUBAGENT</div>
+        <span class="card-label lbl-shipping">FedEx</span>
+        <h3>Print Shipping Label</h3>
+        <p>Full 6-step flow: confirm address, pick container, get weight, pull rates, confirm, print label.</p>
+        <div class="card-footer">
+          <div class="agent-chip">📦 Parcel</div>
+          <span class="trigger-chip">Slack trigger</span>
+        </div>
+      </div>
+
+      <div class="card parcel-card">
+        <div class="subagent-badge badge-parcel">SUBAGENT</div>
+        <span class="card-label lbl-shipping">FedEx</span>
+        <h3>Rate Quote</h3>
+        <p>Pull FedEx rates via get-rates.sh, output full comparison table. FedEx only by default.</p>
+        <div class="card-footer">
+          <div class="agent-chip">📦 Parcel</div>
+          <span class="trigger-chip">Slack trigger</span>
+        </div>
+      </div>
+
+      <div class="card parcel-card">
+        <div class="subagent-badge badge-parcel">SUBAGENT</div>
+        <span class="card-label lbl-shipping">Address Book</span>
+        <h3>Maintain Shipping Addresses</h3>
+        <p>Update Jimi's Addresses table: Last Shipped, Item Shipped. Add new contacts after shipping.</p>
+        <div class="card-footer">
+          <div class="agent-chip">📦 Parcel</div>
+          <span class="trigger-chip">After each label</span>
+        </div>
+      </div>
+
+      <div class="card parcel-card">
+        <div class="subagent-badge badge-parcel">SUBAGENT</div>
+        <span class="card-label lbl-shipping">EasyPost</span>
+        <h3>Void / Reprint Label</h3>
+        <p>Void original EasyPost label before reprinting to avoid double charge.</p>
+        <div class="card-footer">
+          <div class="agent-chip">📦 Parcel</div>
+          <span class="trigger-chip">On request</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ATHENA -->
+  <div class="column col-athena">
+    <div class="column-header">
+      <span class="col-icon">⚔️</span>
+      <h2>Athena</h2>
+      <span class="col-count">2</span>
+    </div>
+    <div class="column-body">
+
+      <div class="card athena-card">
+        <div class="subagent-badge badge-athena">SUBAGENT</div>
+        <span class="card-label lbl-subagent">Slack</span>
+        <h3>Technical Q&amp;A</h3>
+        <p>Answers Drawing Details + Design Team Q&amp;A questions. Redirects unknowns to Samantha or Carlo.</p>
+        <div class="card-footer">
+          <div class="agent-chip">⚔️ Athena</div>
+          <span class="trigger-chip">On mention</span>
+        </div>
+      </div>
+
+      <div class="card athena-card">
+        <div class="subagent-badge badge-athena">SUBAGENT</div>
+        <span class="card-label lbl-subagent">Slack</span>
+        <h3>First-Time User Onboarding</h3>
+        <p>Sends intro message to new users, then answers their first question immediately.</p>
+        <div class="card-footer">
+          <div class="agent-chip">⚔️ Athena</div>
+          <span class="trigger-chip">First contact</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- MONITORING -->
+  <div class="column col-monitor">
+    <div class="column-header">
+      <span class="col-icon">📡</span>
+      <h2>Monitoring</h2>
+      <span class="col-count">2</span>
+    </div>
+    <div class="column-body">
+
+      <div class="card">
+        <span class="card-label lbl-monitor">Heartbeat</span>
+        <h3><span class="active-dot"></span>Flowspace API Email Watch</h3>
+        <p>Checking samantha@ for Flowspace API key reply. Notifies #flowspace on Discord when found.</p>
+        <div class="card-footer">
+          <div class="agent-chip">🎸 Jimi</div>
+          <span class="trigger-chip">🟡 Active</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <span class="card-label lbl-monitor">Heartbeat</span>
+        <h3>Periodic Inbox Check</h3>
+        <p>Scans samantha@ for urgent mail 2–4× per day. Surfaces alerts when actionable.</p>
+        <div class="card-footer">
+          <div class="agent-chip">🎸 Jimi</div>
+          <span class="trigger-chip">Scheduled</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  M|R Walls · Agent Task Board · Santa Monica, CA · Updated May 2026 🎸
+</footer>
+
+</body>
+</html>
