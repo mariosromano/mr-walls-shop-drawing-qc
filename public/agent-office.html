@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>M|R Walls · Agent Office</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --floor-dark: #1a1a1a;
+      --floor-light: #1f1f1f;
+      --jimi: #a78bfa;
+      --indy: #fbbf24;
+      --parcel: #34d399;
+      --athena: #2dd4bf;
+      --scout: #fb923c;
+    }
+
+    @font-face {
+      font-family: 'Pixel';
+      src: local('Courier New');
+    }
+
+    body {
+      background: #111;
+      color: #f0f0f0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+    }
+
+    /* ── TOP BAR ── */
+    .topbar {
+      background: #161616;
+      border-bottom: 1px solid #2a2a2a;
+      padding: 10px 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-shrink: 0;
+    }
+
+    .start-chat {
+      background: #2a2a2a;
+      border: 1px solid #444;
+      color: #ccc;
+      font-size: 0.8rem;
+      padding: 6px 14px;
+      border-radius: 6px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .topbar-title {
+      font-size: 0.78rem;
+      color: #555;
+      margin-left: auto;
+      letter-spacing: 0.5px;
+    }
+
+    /* ── MAIN LAYOUT ── */
+    .main {
+      display: flex;
+      flex: 1;
+      min-height: 0;
+    }
+
+    /* ── OFFICE FLOOR ── */
+    .office-floor {
+      flex: 1;
+      position: relative;
+      background-color: #161616;
+      background-image:
+        linear-gradient(45deg, #1c1c1c 25%, transparent 25%),
+        linear-gradient(-45deg, #1c1c1c 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, #1c1c1c 75%),
+        linear-gradient(-45deg, transparent 75%, #1c1c1c 75%);
+      background-size: 48px 48px;
+      background-position: 0 0, 0 24px, 24px -24px, -24px 0px;
+      overflow: hidden;
+      min-height: 480px;
+    }
+
+    /* ── DESK ── */
+    .desk-area {
+      position: absolute;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0;
+    }
+
+    .speech-bubble {
+      background: #1e1e1e;
+      border: 1px solid #444;
+      border-radius: 8px;
+      padding: 5px 10px;
+      font-size: 0.7rem;
+      color: #ccc;
+      white-space: nowrap;
+      max-width: 160px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      position: relative;
+      margin-bottom: 6px;
+    }
+
+    .speech-bubble::after {
+      content: '';
+      position: absolute;
+      bottom: -6px;
+      left: 50%;
+      transform: translateX(-50%);
+      border: 6px solid transparent;
+      border-top-color: #444;
+      border-bottom: none;
+    }
+
+    /* ── PIXEL CHARACTER ── */
+    .pixel-agent {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-bottom: 4px;
+    }
+
+    /* Base character made with CSS boxes (pixel art style) */
+    .agent-body {
+      width: 28px;
+      height: 28px;
+      border-radius: 4px;
+      position: relative;
+      image-rendering: pixelated;
+    }
+
+    .agent-head {
+      width: 20px;
+      height: 20px;
+      border-radius: 3px;
+      position: absolute;
+      top: -18px;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+
+    .agent-emoji {
+      font-size: 1.4rem;
+      line-height: 1;
+      filter: drop-shadow(0 0 6px var(--color));
+    }
+
+    .agent-label {
+      font-size: 0.68rem;
+      font-weight: 700;
+      color: var(--color);
+      margin-top: 3px;
+      text-shadow: 0 0 8px var(--color);
+    }
+
+    /* Desk furniture */
+    .desk-furniture {
+      width: 64px;
+      height: 32px;
+      border-radius: 4px 4px 2px 2px;
+      border-top: 3px solid;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.9rem;
+      position: relative;
+    }
+
+    .desk-jimi    .desk-furniture { background: #1a1533; border-color: var(--jimi); }
+    .desk-indy    .desk-furniture { background: #1a1500; border-color: var(--indy); }
+    .desk-parcel  .desk-furniture { background: #001a11; border-color: var(--parcel); }
+    .desk-athena  .desk-furniture { background: #001a18; border-color: var(--athena); }
+    .desk-scout   .desk-furniture { background: #1a0e00; border-color: var(--scout); }
+
+    /* Desk positions */
+    .desk-jimi   { top: 45%; left: 38%; transform: translate(-50%, -50%); }
+    .desk-indy   { top: 20%; left: 20%; }
+    .desk-parcel { top: 20%; left: 60%; }
+    .desk-athena { top: 60%; left: 18%; }
+    .desk-scout  { top: 65%; left: 62%; }
+
+    /* Decorations */
+    .plant {
+      position: absolute;
+      font-size: 2.2rem;
+      filter: drop-shadow(0 4px 8px rgba(0,0,0,0.5));
+    }
+    .plant-tl { top: 32px; left: 24px; }
+    .plant-tr { top: 32px; right: 24px; }
+    .plant-bl { bottom: 60px; left: 24px; }
+    .plant-br { bottom: 60px; right: 24px; }
+
+    /* Glow pulse animation */
+    @keyframes pulse-jimi   { 0%,100%{box-shadow:0 0 0 0 #a78bfa44} 50%{box-shadow:0 0 0 6px #a78bfa22} }
+    @keyframes pulse-indy   { 0%,100%{box-shadow:0 0 0 0 #fbbf2444} 50%{box-shadow:0 0 0 6px #fbbf2422} }
+    @keyframes pulse-parcel { 0%,100%{box-shadow:0 0 0 0 #34d39944} 50%{box-shadow:0 0 0 6px #34d39922} }
+    @keyframes pulse-athena { 0%,100%{box-shadow:0 0 0 0 #2dd4bf44} 50%{box-shadow:0 0 0 6px #2dd4bf22} }
+    @keyframes pulse-scout  { 0%,100%{box-shadow:0 0 0 0 #fb923c44} 50%{box-shadow:0 0 0 6px #fb923c22} }
+    @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-4px)} }
+    @keyframes blink-cursor { 0%,100%{opacity:1} 50%{opacity:0} }
+    @keyframes typing { from{width:0} to{width:100%} }
+    @keyframes fadeInUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+
+    .desk-jimi   .desk-furniture { animation: pulse-jimi   2s infinite; }
+    .desk-indy   .desk-furniture { animation: pulse-indy   2.3s infinite; }
+    .desk-parcel .desk-furniture { animation: pulse-parcel 1.8s infinite; }
+    .desk-athena .desk-furniture { animation: pulse-athena 2.5s infinite; }
+    .desk-scout  .desk-furniture { animation: pulse-scout  2.1s infinite; }
+
+    .pixel-agent { animation: float 3s ease-in-out infinite; }
+    .desk-indy   .pixel-agent { animation-delay: 0.5s; }
+    .desk-parcel .pixel-agent { animation-delay: 1s; }
+    .desk-athena .pixel-agent { animation-delay: 1.5s; }
+    .desk-scout  .pixel-agent { animation-delay: 2s; }
+
+    /* Status indicator dot */
+    .status-ring {
+      position: relative;
+      display: inline-block;
+    }
+    .status-ring::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      right: 0;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      border: 2px solid #161616;
+      background: #22c55e;
+    }
+    .status-ring.standby::after { background: #f59e0b; }
+
+    /* ── RIGHT SIDEBAR: LIVE ACTIVITY ── */
+    .sidebar {
+      width: 240px;
+      background: #161616;
+      border-left: 1px solid #2a2a2a;
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+    }
+
+    .sidebar-header {
+      padding: 12px 16px;
+      border-bottom: 1px solid #2a2a2a;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .sidebar-header h2 {
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: #fff;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+    }
+
+    .live-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #22c55e;
+      animation: pulse-live 1.5s infinite;
+    }
+
+    @keyframes pulse-live {
+      0%,100%{opacity:1;transform:scale(1)}
+      50%{opacity:0.5;transform:scale(0.8)}
+    }
+
+    .last-label {
+      margin-left: auto;
+      font-size: 0.65rem;
+      color: #444;
+    }
+
+    .activity-feed {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px 0;
+    }
+
+    .activity-feed::-webkit-scrollbar { width: 3px; }
+    .activity-feed::-webkit-scrollbar-track { background: transparent; }
+    .activity-feed::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+
+    .activity-item {
+      padding: 8px 14px;
+      border-bottom: 1px solid #1e1e1e;
+      animation: fadeInUp 0.4s ease;
+    }
+
+    .activity-item:hover { background: #1c1c1c; }
+
+    .act-header {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      margin-bottom: 3px;
+    }
+
+    .act-emoji { font-size: 0.9rem; }
+
+    .act-name {
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--color);
+    }
+
+    .act-task {
+      font-size: 0.68rem;
+      color: #888;
+      font-weight: 500;
+    }
+
+    .act-desc {
+      font-size: 0.7rem;
+      color: #555;
+      line-height: 1.4;
+      padding-left: 22px;
+    }
+
+    .act-time {
+      font-size: 0.62rem;
+      color: #3a3a3a;
+      padding-left: 22px;
+      margin-top: 2px;
+    }
+
+    /* ── BOTTOM AGENT CARDS ── */
+    .agent-cards {
+      background: #141414;
+      border-top: 1px solid #2a2a2a;
+      padding: 10px 16px;
+      display: flex;
+      gap: 10px;
+      overflow-x: auto;
+      flex-shrink: 0;
+    }
+
+    .agent-cards::-webkit-scrollbar { height: 3px; }
+    .agent-cards::-webkit-scrollbar-track { background: transparent; }
+    .agent-cards::-webkit-scrollbar-thumb { background: #333; }
+
+    .agent-card {
+      background: #1c1c1c;
+      border: 1px solid #2a2a2a;
+      border-radius: 8px;
+      padding: 8px 12px;
+      min-width: 148px;
+      flex-shrink: 0;
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+    }
+
+    .agent-card:hover {
+      border-color: var(--color);
+      background: #202020;
+    }
+
+    .card-top {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 5px;
+    }
+
+    .card-emoji { font-size: 1.1rem; }
+
+    .card-name {
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .card-role {
+      font-size: 0.62rem;
+      color: #555;
+    }
+
+    .card-task {
+      font-size: 0.68rem;
+      color: var(--color);
+      font-weight: 600;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .card-task::before {
+      content: '';
+      display: inline-block;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--color);
+      flex-shrink: 0;
+    }
+
+    /* Typing indicator */
+    .typing {
+      display: inline-flex;
+      gap: 2px;
+      align-items: center;
+      height: 12px;
+    }
+    .typing span {
+      display: block;
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background: #555;
+      animation: typing-dot 1.4s infinite;
+    }
+    .typing span:nth-child(2) { animation-delay: 0.2s; }
+    .typing span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes typing-dot {
+      0%,80%,100%{transform:scale(0.8);background:#444}
+      40%{transform:scale(1.2);background:#888}
+    }
+
+    /* Color vars per agent */
+    .desk-jimi   { --color: var(--jimi); }
+    .desk-indy   { --color: var(--indy); }
+    .desk-parcel { --color: var(--parcel); }
+    .desk-athena { --color: var(--athena); }
+    .desk-scout  { --color: var(--scout); }
+    .card-jimi   { --color: var(--jimi); }
+    .card-indy   { --color: var(--indy); }
+    .card-parcel { --color: var(--parcel); }
+    .card-athena { --color: var(--athena); }
+    .card-scout  { --color: var(--scout); }
+
+    /* Connection line between Jimi and subagents */
+    .floor-label {
+      position: absolute;
+      bottom: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 0.6rem;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: #2a2a2a;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <button class="start-chat">+ Start Chat</button>
+  <div class="topbar-title">M|R Walls · Agent Office &nbsp;·&nbsp; Santa Monica</div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- OFFICE FLOOR -->
+  <div class="office-floor">
+
+    <!-- Plants -->
+    <div class="plant plant-tl">🌿</div>
+    <div class="plant plant-tr">🌿</div>
+    <div class="plant plant-bl">🪴</div>
+    <div class="plant plant-br">🪴</div>
+
+    <!-- JIMI (center, slightly left) -->
+    <div class="desk-area desk-jimi" style="--color: var(--jimi)">
+      <div class="speech-bubble" id="bubble-jimi">Uploading to Dash DAM...</div>
+      <div class="pixel-agent">
+        <div class="status-ring">
+          <div class="agent-emoji">🎸</div>
+        </div>
+        <div class="agent-label">Jimi</div>
+      </div>
+      <div class="desk-furniture">💻</div>
+    </div>
+
+    <!-- INDY (top left) -->
+    <div class="desk-area desk-indy" style="--color: var(--indy)">
+      <div class="speech-bubble" id="bubble-indy">Scanning Slack...</div>
+      <div class="pixel-agent">
+        <div class="status-ring standby">
+          <div class="agent-emoji">🐍</div>
+        </div>
+        <div class="agent-label">Indy</div>
+      </div>
+      <div class="desk-furniture">🖥️</div>
+    </div>
+
+    <!-- PARCEL (top right) -->
+    <div class="desk-area desk-parcel" style="--color: var(--parcel)">
+      <div class="speech-bubble" id="bubble-parcel">Printing FedEx label...</div>
+      <div class="pixel-agent">
+        <div class="status-ring standby">
+          <div class="agent-emoji">📦</div>
+        </div>
+        <div class="agent-label">Parcel</div>
+      </div>
+      <div class="desk-furniture">🖨️</div>
+    </div>
+
+    <!-- ATHENA (bottom left) -->
+    <div class="desk-area desk-athena" style="--color: var(--athena)">
+      <div class="speech-bubble" id="bubble-athena">Answering tech Q&A...</div>
+      <div class="pixel-agent">
+        <div class="status-ring standby">
+          <div class="agent-emoji">⚔️</div>
+        </div>
+        <div class="agent-label">Athena</div>
+      </div>
+      <div class="desk-furniture">📚</div>
+    </div>
+
+    <!-- SCOUT (bottom right) -->
+    <div class="desk-area desk-scout" style="--color: var(--scout)">
+      <div class="speech-bubble" id="bubble-scout">Monitoring channels...</div>
+      <div class="pixel-agent">
+        <div class="status-ring standby">
+          <div class="agent-emoji">📡</div>
+        </div>
+        <div class="agent-label">Scout</div>
+      </div>
+      <div class="desk-furniture">📊</div>
+    </div>
+
+    <div class="floor-label">◈ Agent Workspace · 2314 Michigan Ave ◈</div>
+  </div>
+
+  <!-- RIGHT SIDEBAR: LIVE ACTIVITY -->
+  <div class="sidebar">
+    <div class="sidebar-header">
+      <div class="live-dot"></div>
+      <h2>Live Activity</h2>
+      <span class="last-label">Last hour</span>
+    </div>
+    <div class="activity-feed" id="activity-feed">
+
+      <div class="activity-item">
+        <div class="act-header">
+          <span class="act-emoji">🎸</span>
+          <span class="act-name" style="--color:var(--jimi)">Jimi</span>
+          <span class="act-task" style="color:#a78bfa">· upload complete</span>
+        </div>
+        <div class="act-desc">3 photos pushed to Dash, tagged Backlight → LIVE</div>
+        <div class="act-time">2 min ago</div>
+      </div>
+
+      <div class="activity-item">
+        <div class="act-header">
+          <span class="act-emoji">📡</span>
+          <span class="act-name" style="--color:var(--scout)">Scout</span>
+          <span class="act-task" style="color:var(--scout)">· scan complete</span>
+        </div>
+        <div class="act-desc">Scanned 23 channels, nothing urgent to surface</div>
+        <div class="act-time">8 min ago</div>
+      </div>
+
+      <div class="activity-item">
+        <div class="act-header">
+          <span class="act-emoji">⚔️</span>
+          <span class="act-name" style="--color:var(--athena)">Athena</span>
+          <span class="act-task" style="color:var(--athena)">· answered</span>
+        </div>
+        <div class="act-desc">Leveler slot spacing — replied ~18" to Belen</div>
+        <div class="act-time">14 min ago</div>
+      </div>
+
+      <div class="activity-item">
+        <div class="act-header">
+          <span class="act-emoji">🐍</span>
+          <span class="act-name" style="--color:var(--indy)">Indy</span>
+          <span class="act-task" style="color:var(--indy)">· task complete</span>
+        </div>
+        <div class="act-desc">Marked 78CDA Done. Slack channel archived. 🐍</div>
+        <div class="act-time">22 min ago</div>
+      </div>
+
+      <div class="activity-item">
+        <div class="act-header">
+          <span class="act-emoji">📦</span>
+          <span class="act-name" style="--color:var(--parcel)">Parcel</span>
+          <span class="act-task" style="color:var(--parcel)">· label printed</span>
+        </div>
+        <div class="act-desc">FedEx Ground to NYC — 3 lbs. Address book updated.</div>
+        <div class="act-time">31 min ago</div>
+      </div>
+
+      <div class="activity-item">
+        <div class="act-header">
+          <span class="act-emoji">🎸</span>
+          <span class="act-name" style="--color:var(--jimi)">Jimi</span>
+          <span class="act-task" style="color:#a78bfa">· QC check</span>
+        </div>
+        <div class="act-desc">Shop Drawing 129IDY — Passed. 0 critical issues.</div>
+        <div class="act-time">45 min ago</div>
+      </div>
+
+      <div class="activity-item">
+        <div class="act-header">
+          <span class="act-emoji">📡</span>
+          <span class="act-name" style="--color:var(--scout)">Scout</span>
+          <span class="act-task" style="color:var(--scout)">· morning digest</span>
+        </div>
+        <div class="act-desc">Sent 8:30 AM briefing to Carlo — 2 items flagged</div>
+        <div class="act-time">1h ago</div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<!-- BOTTOM AGENT CARDS -->
+<div class="agent-cards">
+
+  <div class="agent-card card-jimi">
+    <div class="card-top">
+      <span class="card-emoji">🎸</span>
+      <div>
+        <div class="card-name">Jimi</div>
+        <div class="card-role">Studio AI Assistant</div>
+      </div>
+    </div>
+    <div class="card-task" id="card-task-jimi">Uploading to Dash DAM...</div>
+  </div>
+
+  <div class="agent-card card-indy">
+    <div class="card-top">
+      <span class="card-emoji">🐍</span>
+      <div>
+        <div class="card-name">Indy</div>
+        <div class="card-role">Operations Assistant</div>
+      </div>
+    </div>
+    <div class="card-task" id="card-task-indy">Idle · Waiting for @mention</div>
+  </div>
+
+  <div class="agent-card card-parcel">
+    <div class="card-top">
+      <span class="card-emoji">📦</span>
+      <div>
+        <div class="card-name">Parcel</div>
+        <div class="card-role">Shipping Assistant</div>
+      </div>
+    </div>
+    <div class="card-task" id="card-task-parcel">Idle · Ready to ship</div>
+  </div>
+
+  <div class="agent-card card-athena">
+    <div class="card-top">
+      <span class="card-emoji">⚔️</span>
+      <div>
+        <div class="card-name">Athena</div>
+        <div class="card-role">Technical Knowledge</div>
+      </div>
+    </div>
+    <div class="card-task" id="card-task-athena">Idle · On standby</div>
+  </div>
+
+  <div class="agent-card card-scout">
+    <div class="card-top">
+      <span class="card-emoji">📡</span>
+      <div>
+        <div class="card-name">Scout</div>
+        <div class="card-role">Background Monitor</div>
+      </div>
+    </div>
+    <div class="card-task" id="card-task-scout">Scanning channels...</div>
+  </div>
+
+</div>
+
+<script>
+  // Rotating speech bubbles for each agent
+  const bubbles = {
+    'bubble-jimi': [
+      'Uploading to Dash DAM...',
+      'Running QC check...',
+      'Logging BOL to Airtable...',
+      'Checking shop drawings...',
+      'Managing Discord...',
+    ],
+    'bubble-indy': [
+      'Idle · Waiting...',
+      'Scanning for @mentions...',
+      'Moving project to Done...',
+      'Drafting email for Carlo...',
+      'Logging note to Airtable...',
+    ],
+    'bubble-parcel': [
+      'Idle · Ready...',
+      'Pulling FedEx rates...',
+      'Printing label...',
+      'Updating address book...',
+      'Confirming shipment...',
+    ],
+    'bubble-athena': [
+      'Idle · On standby...',
+      'Answering tech Q&A...',
+      'Looking up drawing detail...',
+      'Onboarding new user...',
+      'Cross-checking specs...',
+    ],
+    'bubble-scout': [
+      'Monitoring channels...',
+      'Scanning 23 channels...',
+      'Filtering noise...',
+      'Preparing digest...',
+      'Flagging urgent items...',
+    ],
+  };
+
+  const cardTasks = {
+    'card-task-jimi': [
+      'Uploading to Dash DAM...',
+      'Running QC check...',
+      'Logging notes...',
+    ],
+    'card-task-indy': [
+      'Idle · Waiting for @mention',
+      'Executing task for Carlo...',
+      'Idle · Standby',
+    ],
+    'card-task-parcel': [
+      'Idle · Ready to ship',
+      'Printing FedEx label...',
+      'Pulling rate quote...',
+    ],
+    'card-task-athena': [
+      'Idle · On standby',
+      'Answering tech Q&A...',
+      'Idle · On standby',
+    ],
+    'card-task-scout': [
+      'Scanning channels...',
+      'Preparing morning digest...',
+      'Monitoring for flags...',
+    ],
+  };
+
+  const indices = {};
+
+  function rotateBubbles() {
+    Object.entries(bubbles).forEach(([id, msgs]) => {
+      if (!(id in indices)) indices[id] = 0;
+      const el = document.getElementById(id);
+      if (el) {
+        indices[id] = (indices[id] + 1) % msgs.length;
+        el.textContent = msgs[indices[id]];
+        el.style.opacity = '0';
+        el.style.transition = 'opacity 0.3s';
+        setTimeout(() => { el.style.opacity = '1'; }, 50);
+      }
+    });
+
+    Object.entries(cardTasks).forEach(([id, msgs]) => {
+      if (!(id in indices)) indices[id] = 0;
+      const el = document.getElementById(id);
+      if (el) {
+        indices[id] = (indices[id] + 1) % msgs.length;
+        el.textContent = msgs[indices[id]];
+      }
+    });
+  }
+
+  // Add new activity items dynamically
+  const newActivities = [
+    { emoji:'🎸', name:'Jimi', color:'var(--jimi)', task:'· note logged', desc:'BOL 67083359 entered into Airtable', time:'just now' },
+    { emoji:'📡', name:'Scout', color:'var(--scout)', task:'· scan complete', desc:'No urgent items in last 2h window', time:'just now' },
+    { emoji:'⚔️', name:'Athena', color:'var(--athena)', task:'· answered', desc:'Panel reveal gap — replied 3/16" to Kamila', time:'just now' },
+    { emoji:'🐍', name:'Indy', color:'var(--indy)', task:'· digest sent', desc:'Sent Carlo DM: 50MA — Toni left a question', time:'just now' },
+    { emoji:'📦', name:'Parcel', color:'var(--parcel)', task:'· label voided', desc:'Voided EasyPost label #EP123 per request', time:'just now' },
+  ];
+
+  let actIdx = 0;
+
+  function addActivity() {
+    const feed = document.getElementById('activity-feed');
+    const act = newActivities[actIdx % newActivities.length];
+    actIdx++;
+
+    const item = document.createElement('div');
+    item.className = 'activity-item';
+    item.style.opacity = '0';
+    item.innerHTML = `
+      <div class="act-header">
+        <span class="act-emoji">${act.emoji}</span>
+        <span class="act-name" style="color:${act.color}">${act.name}</span>
+        <span class="act-task" style="color:${act.color}">${act.task}</span>
+      </div>
+      <div class="act-desc">${act.desc}</div>
+      <div class="act-time">${act.time}</div>
+    `;
+
+    feed.insertBefore(item, feed.firstChild);
+    setTimeout(() => {
+      item.style.transition = 'opacity 0.5s';
+      item.style.opacity = '1';
+    }, 50);
+
+    // Update time labels on older items
+    const items = feed.querySelectorAll('.activity-item .act-time');
+    const times = ['just now', '2 min ago', '5 min ago', '10 min ago', '18 min ago', '25 min ago', '35 min ago', '48 min ago', '1h ago'];
+    items.forEach((t, i) => { if (times[i]) t.textContent = times[i]; });
+
+    // Remove items beyond 8
+    while (feed.children.length > 8) {
+      feed.removeChild(feed.lastChild);
+    }
+  }
+
+  // Stagger the timers so they don't all fire at once
+  setInterval(rotateBubbles, 4000);
+  setInterval(addActivity, 9000);
+
+  // Initial stagger
+  setTimeout(addActivity, 2000);
+</script>
+
+</body>
+</html>
