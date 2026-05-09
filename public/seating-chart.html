@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>M|R Walls · Agent Office</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #0d0d0d;
+      color: #f0f0f0;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    header {
+      background: linear-gradient(135deg, #1a1a2e, #0f3460);
+      border-bottom: 2px solid #7c3aed;
+      padding: 22px 36px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    header h1 { font-size: 1.5rem; font-weight: 800; color: #fff; }
+    header p { font-size: 0.82rem; color: #a0aec0; margin-top: 2px; }
+
+    .floor-label {
+      margin-left: auto;
+      background: #7c3aed22;
+      border: 1px solid #7c3aed66;
+      color: #c084fc;
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 5px 14px;
+      border-radius: 20px;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+    }
+
+    .office {
+      position: relative;
+      max-width: 960px;
+      margin: 40px auto;
+      padding: 0 24px 60px;
+    }
+
+    /* Floor plan background */
+    .floor-plan {
+      background: #111;
+      border: 2px solid #222;
+      border-radius: 20px;
+      padding: 48px 40px 52px;
+      position: relative;
+    }
+
+    /* Wall lines for that office blueprint feel */
+    .floor-plan::before {
+      content: '';
+      position: absolute;
+      inset: 12px;
+      border: 1px dashed #222;
+      border-radius: 12px;
+      pointer-events: none;
+    }
+
+    .floor-title {
+      text-align: center;
+      font-size: 0.7rem;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: #333;
+      margin-bottom: 40px;
+    }
+
+    /* Desks grid */
+    .desks {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 28px;
+      max-width: 820px;
+      margin: 0 auto;
+    }
+
+    .desk {
+      background: #181818;
+      border: 1px solid #2a2a2a;
+      border-radius: 16px;
+      padding: 28px 26px 24px;
+      position: relative;
+      transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+      cursor: default;
+    }
+
+    .desk:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 32px var(--glow);
+      border-color: var(--accent);
+    }
+
+    /* Desk nameplate tab at top */
+    .desk::before {
+      content: attr(data-name);
+      position: absolute;
+      top: -1px;
+      left: 24px;
+      background: var(--accent);
+      color: #000;
+      font-size: 0.65rem;
+      font-weight: 800;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      padding: 3px 12px;
+      border-radius: 0 0 8px 8px;
+    }
+
+    /* Individual desk accent colors */
+    .desk-jimi   { --accent: #a78bfa; --glow: rgba(167,139,250,0.12); }
+    .desk-indy   { --accent: #fbbf24; --glow: rgba(251,191,36,0.12); }
+    .desk-parcel { --accent: #34d399; --glow: rgba(52,211,153,0.12); }
+    .desk-athena { --accent: #2dd4bf; --glow: rgba(45,212,191,0.12); }
+
+    .desk-header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-top: 6px;
+    }
+
+    .avatar {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      background: var(--avatar-bg);
+      border: 2px solid var(--accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+      flex-shrink: 0;
+    }
+
+    .desk-jimi   .avatar { --avatar-bg: #1e1a2e; }
+    .desk-indy   .avatar { --avatar-bg: #1e1a0e; }
+    .desk-parcel .avatar { --avatar-bg: #0e1e18; }
+    .desk-athena .avatar { --avatar-bg: #0e1e1e; }
+
+    .desk-info h2 {
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: #fff;
+    }
+
+    .desk-info .title {
+      font-size: 0.78rem;
+      color: var(--accent);
+      font-weight: 600;
+      margin-top: 3px;
+      letter-spacing: 0.3px;
+    }
+
+    .desk-info .reports {
+      font-size: 0.72rem;
+      color: #555;
+      margin-top: 2px;
+    }
+
+    .divider {
+      height: 1px;
+      background: #222;
+      margin: 18px 0;
+    }
+
+    .desk-bio {
+      font-size: 0.82rem;
+      color: #808080;
+      line-height: 1.6;
+    }
+
+    .skills-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 16px;
+    }
+
+    .skill-tag {
+      background: #222;
+      border: 1px solid #333;
+      color: #aaa;
+      font-size: 0.68rem;
+      font-weight: 600;
+      padding: 3px 9px;
+      border-radius: 6px;
+      letter-spacing: 0.3px;
+    }
+
+    .status-dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      margin-right: 5px;
+    }
+
+    .status-row {
+      display: flex;
+      align-items: center;
+      margin-top: 14px;
+      font-size: 0.72rem;
+      color: #555;
+    }
+
+    .online  { background: #22c55e; box-shadow: 0 0 6px #22c55e88; }
+    .standby { background: #f59e0b; box-shadow: 0 0 6px #f59e0b88; }
+
+    /* Kitchen / break room label */
+    .room-label {
+      text-align: center;
+      margin-top: 40px;
+      font-size: 0.68rem;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: #2a2a2a;
+    }
+
+    /* Org chart connector lines (decorative) */
+    .org-line {
+      text-align: center;
+      margin: 0 auto 32px;
+      font-size: 0.72rem;
+      color: #333;
+      letter-spacing: 0.5px;
+    }
+
+    .reports-to-jimi {
+      border-top: 1px dashed #2a2a2a;
+      padding-top: 24px;
+      margin-top: 24px;
+    }
+
+    .section-label {
+      text-align: center;
+      font-size: 0.65rem;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: #444;
+      margin-bottom: 20px;
+    }
+
+    footer {
+      text-align: center;
+      padding: 0 0 28px;
+      color: #333;
+      font-size: 0.72rem;
+      letter-spacing: 0.5px;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>M|R Walls · Agent Office</h1>
+    <p>Santa Monica, CA · 2314 Michigan Ave</p>
+  </div>
+  <div class="floor-label">🏢 Floor Plan</div>
+</header>
+
+<div class="office">
+  <div class="floor-plan">
+    <div class="floor-title">◈ Agent Workspace ◈</div>
+
+    <!-- HEAD OF STUDIO -->
+    <div class="section-label">Studio Lead</div>
+    <div class="desks" style="grid-template-columns: 1fr; max-width: 420px; margin: 0 auto 36px;">
+
+      <div class="desk desk-jimi" data-name="Desk A1">
+        <div class="desk-header">
+          <div class="avatar">🎸</div>
+          <div class="desk-info">
+            <h2>Jimi</h2>
+            <div class="title">Studio AI Assistant</div>
+            <div class="reports">Reports to: Mario Romano</div>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div class="desk-bio">
+          The main agent. Handles design assets, Dash DAM uploads, shop drawing QC, Discord ops, and BOL data entry. Keeps memory across sessions and coordinates the other agents.
+        </div>
+        <div class="skills-row">
+          <span class="skill-tag">Dash DAM</span>
+          <span class="skill-tag">Shop Drawings</span>
+          <span class="skill-tag">Discord</span>
+          <span class="skill-tag">Airtable</span>
+          <span class="skill-tag">Memory</span>
+        </div>
+        <div class="status-row">
+          <span class="status-dot online"></span> Online · Main session
+        </div>
+      </div>
+
+    </div>
+
+    <!-- SUBAGENTS -->
+    <div class="reports-to-jimi">
+      <div class="section-label">↑ Reports to Jimi ↑ &nbsp;&nbsp;·&nbsp;&nbsp; Subagents</div>
+      <div class="desks">
+
+        <div class="desk desk-indy" data-name="Desk B1">
+          <div class="desk-header">
+            <div class="avatar">🐍</div>
+            <div class="desk-info">
+              <h2>Indy</h2>
+              <div class="title">Operations Assistant</div>
+              <div class="reports">Reports to: Carlo Gomez</div>
+            </div>
+          </div>
+          <div class="divider"></div>
+          <div class="desk-bio">
+            Carlo's field operative. Monitors all Slack channels, filters the noise, and DMs Carlo what actually needs his attention. Handles project lifecycle tasks: Done, Paid In Full, SPEC DA archive.
+          </div>
+          <div class="skills-row">
+            <span class="skill-tag">Slack</span>
+            <span class="skill-tag">Gmail</span>
+            <span class="skill-tag">Airtable</span>
+            <span class="skill-tag">Projects</span>
+          </div>
+          <div class="status-row">
+            <span class="status-dot standby"></span> Standby · Slack socket mode
+          </div>
+        </div>
+
+        <div class="desk desk-parcel" data-name="Desk B2">
+          <div class="desk-header">
+            <div class="avatar">📦</div>
+            <div class="desk-info">
+              <h2>Parcel</h2>
+              <div class="title">Shipping Assistant</div>
+              <div class="reports">Reports to: Studio Team</div>
+            </div>
+          </div>
+          <div class="divider"></div>
+          <div class="desk-bio">
+            One job: ship things fast and accurately. Handles the full FedEx label flow — address lookup, container selection, rate quotes, label printing, and address book logging.
+          </div>
+          <div class="skills-row">
+            <span class="skill-tag">FedEx API</span>
+            <span class="skill-tag">EasyPost</span>
+            <span class="skill-tag">Label Print</span>
+            <span class="skill-tag">Slack</span>
+          </div>
+          <div class="status-row">
+            <span class="status-dot standby"></span> Standby · Slack socket mode
+          </div>
+        </div>
+
+        <div class="desk desk-athena" data-name="Desk B3">
+          <div class="desk-header">
+            <div class="avatar">⚔️</div>
+            <div class="desk-info">
+              <h2>Athena</h2>
+              <div class="title">Technical Knowledge Assistant</div>
+              <div class="reports">Reports to: Samantha / Carlo</div>
+            </div>
+          </div>
+          <div class="divider"></div>
+          <div class="desk-bio">
+            Named after the goddess of wisdom, craft, and strategy. Answers technical questions about drawing details and design team Q&amp;A. If she can't answer, she redirects to Samantha or Carlo — never stays silent.
+          </div>
+          <div class="skills-row">
+            <span class="skill-tag">Drawing Details</span>
+            <span class="skill-tag">Design Q&amp;A</span>
+            <span class="skill-tag">Onboarding</span>
+            <span class="skill-tag">Slack</span>
+          </div>
+          <div class="status-row">
+            <span class="status-dot standby"></span> Standby · Slack socket mode
+          </div>
+        </div>
+
+        <!-- Placeholder future agent -->
+        <div class="desk" style="--accent: #444; --glow: rgba(255,255,255,0.03); border-style: dashed; opacity: 0.4;" data-name="Desk B4">
+          <div class="desk-header">
+            <div class="avatar" style="--avatar-bg: #111; font-size: 1.2rem; color: #555;">?</div>
+            <div class="desk-info">
+              <h2 style="color: #444;">Open Seat</h2>
+              <div class="title" style="color: #444;">Future Agent</div>
+              <div class="reports" style="color: #333;">TBD</div>
+            </div>
+          </div>
+          <div class="divider"></div>
+          <div class="desk-bio" style="color: #333;">This desk is waiting for the next agent to join the studio.</div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="room-label">◈ &nbsp; M|R Walls Studio · Santa Monica &nbsp; ◈</div>
+  </div>
+</div>
+
+<footer>Agent Office · M|R Walls · Updated May 2026 🎸</footer>
+
+</body>
+</html>
