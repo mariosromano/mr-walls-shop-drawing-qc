@@ -14,9 +14,9 @@ const CHECKLIST_PROMPT = `Analyze this shop drawing PDF against the following ch
 ### 1. PDF FILENAME FORMAT
 - The filename provided must match this pattern: [MM-DD-YYYY] Project Name - Shop Drawing V#.pdf
 - Example: [04-02-2026] Rosero Garage - Shop Drawing V2.pdf
-- The date must be in brackets in MM-DD-YYYY format (e.g. [04-02-2026])
-- Must contain "Shop Drawing" followed by a version like V1, V2, -V1, -V2, etc.
-- PASS if the filename follows this convention. FAIL only if the date brackets or Shop Drawing version are completely missing.
+- The date MUST be in brackets using dashes in MM-DD-YYYY format (e.g. [04-02-2026]). Using dots like [05.12.2026] or malformed dates like [05.12026] are FAIL.
+- Must contain "Shop Drawing" followed by a space or dash then version like V1, V2, -V1, -V2, etc. A period before the version like ".V1" is FAIL.
+- FAIL if: the date format uses dots instead of dashes, the date is missing digits, the brackets are missing, the version separator is a period (e.g. ".V1"), or "Shop Drawing" or the version number are absent.
 
 ### 2. SPELLING ERRORS
 - Check ALL text on every page for misspellings
