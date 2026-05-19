@@ -96,7 +96,7 @@ export async function POST(req: NextRequest) {
   if (!projectName) return NextResponse.json({ error: 'Project name is required' }, { status: 400 });
 
   // 1. Look up project
-  const formula = encodeURIComponent(`SEARCH("${projectName.trim()}", {Project Name})`);
+  const formula = encodeURIComponent(`{Project Name} = "${projectName.trim()}"`);
   const atRes = await fetch(
     `https://api.airtable.com/v0/${BASE_ID}/Projects?filterByFormula=${formula}&fields[]=Project%20Name&fields[]=Slack%20Channel%20ID&fields[]=Manager&fields[]=Render%20Folder%20URL&fields[]=Designer`,
     { headers: { Authorization: `Bearer ${AIRTABLE_TOKEN}` } }
