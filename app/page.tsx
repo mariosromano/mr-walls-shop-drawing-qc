@@ -64,6 +64,7 @@ interface ProjectAnswers {
   hasCutouts: boolean | null;
   hasCorners: boolean | null;
   hasLogos: boolean | null;
+  hasInstallDiagram: boolean | null;
 }
 
 // Target compression size (25MB) - try to compress anything over this
@@ -76,6 +77,7 @@ const QUESTIONS = [
   { id: 'hasCutouts', label: 'Does it have cutouts?', icon: Square, desc: 'TV openings, pass-throughs' },
   { id: 'hasCorners', label: 'Inside or outside corners?', icon: CornerDownRight, desc: 'Wall wraps around' },
   { id: 'hasLogos', label: 'Logos or inlays?', icon: Building2, desc: 'Custom engravings' },
+  { id: 'hasInstallDiagram', label: 'Install diagrams included?', icon: FileText, desc: 'Framing/installation instructions' },
 ];
 
 async function compressPDF(file: File): Promise<{ compressedFile: File; originalSize: number; compressedSize: number }> {
@@ -138,6 +140,7 @@ export default function ShopDrawingQC() {
     hasCutouts: null,
     hasCorners: null,
     hasLogos: null,
+    hasInstallDiagram: null,
   });
   const [results, setResults] = useState<AnalysisResults | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -279,6 +282,7 @@ export default function ShopDrawingQC() {
             hasCutouts: projectAnswers.hasCutouts === true,
             hasCorners: projectAnswers.hasCorners === true,
             hasLogos: projectAnswers.hasLogos === true,
+            hasInstallDiagram: projectAnswers.hasInstallDiagram === true,
           },
         }),
       });
@@ -309,7 +313,7 @@ export default function ShopDrawingQC() {
     setResults(null);
     setError(null);
     setProgress(0);
-    setProjectAnswers({ isBacklit: null, hasCutouts: null, hasCorners: null, hasLogos: null });
+    setProjectAnswers({ isBacklit: null, hasCutouts: null, hasCorners: null, hasLogos: null, hasInstallDiagram: null });
     setBacklitAnswered(false);
     setCompressionResult(null);
     setShowReviewerPicker(false);
