@@ -23,8 +23,11 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ found: false });
   }
 
-  const renderUrls: string[] = record.fields['Render Folder URL'] || [];
-  const renderUrl = renderUrls[0] || null;
+  // Render Folder URL is a plain text/URL field in Airtable (returns string, not array)
+  const renderFolderRaw = record.fields['Render Folder URL'];
+  const renderUrl = Array.isArray(renderFolderRaw)
+    ? (renderFolderRaw[0] || null)
+    : (renderFolderRaw || null);
 
   return NextResponse.json({
     found: true,
