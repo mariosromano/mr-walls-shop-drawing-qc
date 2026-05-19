@@ -59,11 +59,6 @@ const CHECKLIST_PROMPT = `Analyze this shop drawing PDF against the following ch
 - Dimension and leader text sizes consistent: PASS/FAIL
 - Scales consistent on same page: PASS/FAIL
 
-### 9. INSTALL DIAGRAMS (apply ONLY if user indicated install diagrams are included)
-- Install diagram present — a framing or installation diagram showing how panels attach to the wall/substrate: PASS/FAIL
-- Install diagram is legible with appropriate dimensions and notes: PASS/FAIL
-- If NOT indicated: omit these checks entirely
-
 ## RESPONSE FORMAT
 
 Return ONLY valid JSON. No text before or after. No markdown code blocks. Start with { and end with }
@@ -85,7 +80,7 @@ Return ONLY valid JSON. No text before or after. No markdown code blocks. Start 
 
 Rules:
 - overallStatus is "fail" if ANY critical issue exists, "warning" if only warnings, "pass" if all checks pass
-- Use consistent check IDs: spelling, tbd, filename, logo, project_name, drawing_type, version, scale, date, material, color, seam, scale_consistency, led_gap, led_access, led_removable, led_wiring, led_components, led_wattage, led_install_note, cutout_notes, corner_joints, layout_crowding, layout_text, layout_scales, install_diagram, install_diagram_legible
+- Use consistent check IDs: spelling, tbd, filename, logo, project_name, drawing_type, version, scale, date, material, color, seam, scale_consistency, led_gap, led_access, led_removable, led_wiring, led_components, led_wattage, led_install_note, cutout_notes, corner_joints, layout_crowding, layout_text, layout_scales
 - Do not invent issues that are not evidenced in the document
 - For N/A checks (e.g. backlit checks on non-backlit project), omit them entirely from the response`;
 
@@ -129,11 +124,6 @@ export async function POST(request: NextRequest) {
       contextNote += ' CORNERS: YES — check butt joint dimension adjustments.';
     } else {
       contextNote += ' CORNERS: NO — skip corner checks.';
-    }
-    if (projectType?.hasInstallDiagram) {
-      contextNote += ' INSTALL DIAGRAMS: YES — verify install/framing diagrams are present and legible.';
-    } else {
-      contextNote += ' INSTALL DIAGRAMS: NO — skip install diagram checks.';
     }
 
     const messageContent: any[] = [
