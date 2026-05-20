@@ -177,7 +177,7 @@ export async function POST(req: NextRequest) {
     : '';
   const notesPart = designerNotes ? `\n📝 *Notes:* ${designerNotes}` : '';
   const renderPart = renderUrl ? `\n📁 *Render Folder:* <${renderUrl}|Open>` : '';
-  const channelMsg = `${managerMention} Shop drawing ready for review — *${fullProjectName}*\n📄 ${filename}${version ? `  •  ${version}` : ''}\n*QC:* ✅ ${passed} passed  ⚠️ ${warnings} warnings\n\nPDF added to the Revisions and Updates canvas.\n_Reply in this thread to approve or describe revisions._${criticalPart}${notesPart}${renderPart}`;
+  const channelMsg = `${managerMention} Shop drawing ready for review — *${fullProjectName}*\n📄 ${filename}${version ? `  •  ${version}` : ''}\n*QC:* ✅ ${passed} passed  ⚠️ ${warnings} warnings\n\nPDF attached in this thread 👇 — also added to the Revisions and Updates canvas.\n_Reply in this thread to approve or describe revisions._${criticalPart}${notesPart}${renderPart}`;
   const msgRes = await slackPost('chat.postMessage', { channel: slackChannelId, text: channelMsg });
   const messageTs = msgRes.ts;
 
@@ -209,3 +209,4 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json({ ok: true, channel: slackChannelId, project: fullProjectName });
 }
+
