@@ -16,6 +16,7 @@
       --athena: #2dd4bf;
       --scout: #fb923c;
       --janine: #f472b6;
+      --goblin: #84cc16;
     }
 
     @font-face {
@@ -183,6 +184,7 @@
     .desk-athena  .desk-furniture { background: #001a18; border-color: var(--athena); }
     .desk-scout   .desk-furniture { background: #1a0e00; border-color: var(--scout); }
     .desk-janine  .desk-furniture { background: #1a0011; border-color: var(--janine); }
+    .desk-goblin  .desk-furniture { background: #0d1a00; border-color: var(--goblin); }
 
     /* Desk positions */
     .desk-jimi   { top: 45%; left: 38%; transform: translate(-50%, -50%); }
@@ -191,6 +193,7 @@
     .desk-athena { top: 60%; left: 18%; }
     .desk-scout  { top: 65%; left: 58%; }
     .desk-janine { top: 25%; left: 75%; }
+    .desk-goblin { top: 60%; left: 42%; }
 
     /* Decorations */
     .plant {
@@ -210,6 +213,7 @@
     @keyframes pulse-athena { 0%,100%{box-shadow:0 0 0 0 #2dd4bf44} 50%{box-shadow:0 0 0 6px #2dd4bf22} }
     @keyframes pulse-scout  { 0%,100%{box-shadow:0 0 0 0 #fb923c44} 50%{box-shadow:0 0 0 6px #fb923c22} }
     @keyframes pulse-janine { 0%,100%{box-shadow:0 0 0 0 #f472b644} 50%{box-shadow:0 0 0 6px #f472b622} }
+    @keyframes pulse-goblin  { 0%,100%{box-shadow:0 0 0 0 #84cc1644} 50%{box-shadow:0 0 0 6px #84cc1622} }
     @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-4px)} }
     @keyframes blink-cursor { 0%,100%{opacity:1} 50%{opacity:0} }
     @keyframes typing { from{width:0} to{width:100%} }
@@ -221,6 +225,7 @@
     .desk-athena .desk-furniture { animation: pulse-athena 2.5s infinite; }
     .desk-scout  .desk-furniture { animation: pulse-scout  2.1s infinite; }
     .desk-janine .desk-furniture { animation: pulse-janine 1.9s infinite; }
+    .desk-goblin .desk-furniture  { animation: pulse-goblin  2.4s infinite; }
 
     .pixel-agent { animation: float 3s ease-in-out infinite; }
     .desk-indy   .pixel-agent { animation-delay: 0.5s; }
@@ -228,6 +233,7 @@
     .desk-athena .pixel-agent { animation-delay: 1.5s; }
     .desk-scout  .pixel-agent { animation-delay: 2s; }
     .desk-janine .pixel-agent { animation-delay: 2.5s; }
+    .desk-goblin .pixel-agent  { animation-delay: 0.8s; }
 
     /* Status indicator dot */
     .status-ring {
@@ -447,12 +453,14 @@
     .desk-athena { --color: var(--athena); }
     .desk-scout  { --color: var(--scout); }
     .desk-janine { --color: var(--janine); }
+    .desk-goblin { --color: var(--goblin); }
     .card-jimi   { --color: var(--jimi); }
     .card-indy   { --color: var(--indy); }
     .card-parcel { --color: var(--parcel); }
     .card-athena { --color: var(--athena); }
     .card-scout  { --color: var(--scout); }
     .card-janine { --color: var(--janine); }
+    .card-goblin { --color: var(--goblin); }
 
     /* Connection line between Jimi and subagents */
     .floor-label {
@@ -546,6 +554,18 @@
         <div class="agent-label">Scout</div>
       </div>
       <div class="desk-furniture">📊</div>
+    </div>
+
+    <!-- GOBLIN (center-bottom) -->
+    <div class="desk-area desk-goblin" style="--color: var(--goblin)">
+      <div class="speech-bubble" id="bubble-goblin">i stole a reminder!!</div>
+      <div class="pixel-agent">
+        <div class="status-ring standby">
+          <div class="agent-emoji">🐿️</div>
+        </div>
+        <div class="agent-label">Goblin</div>
+      </div>
+      <div class="desk-furniture">⏰</div>
     </div>
 
     <!-- JANINE (right side) -->
@@ -705,6 +725,17 @@
     <div class="card-task" id="card-task-scout">Scanning channels...</div>
   </div>
 
+  <div class="agent-card card-goblin">
+    <div class="card-top">
+      <span class="card-emoji">🐿️</span>
+      <div>
+        <div class="card-name">Task Goblin</div>
+        <div class="card-role">Ops Reminder Agent</div>
+      </div>
+    </div>
+    <div class="card-task" id="card-task-goblin">Firing reminders...</div>
+  </div>
+
   <div class="agent-card card-janine">
     <div class="card-top">
       <span class="card-emoji">📋</span>
@@ -756,6 +787,13 @@
       'Preparing digest...',
       'Flagging urgent items...',
     ],
+    'bubble-goblin': [
+      'i stole a reminder!!',
+      'goblin did a helpful thing!!',
+      'task acquired!! 🎉',
+      'reminder deployed!!',
+      'lil nudge from the goblin 🐿️',
+    ],
     'bubble-janine': [
       'Reviewing shop drawings...',
       'Sending 5-day nudges...',
@@ -790,6 +828,11 @@
       'Scanning channels...',
       'Preparing morning digest...',
       'Monitoring for flags...',
+    ],
+    'card-task-goblin': [
+      'Firing reminders...',
+      'Delivery address check...',
+      'Client follow-up sent!',
     ],
     'card-task-janine': [
       'Checking shop drawings...',
@@ -831,6 +874,7 @@
     { emoji:'🐍', name:'Indy', color:'var(--indy)', task:'· digest sent', desc:'Sent Carlo DM: 50MA — Toni left a question', time:'just now' },
     { emoji:'📦', name:'Parcel', color:'var(--parcel)', task:'· label voided', desc:'Voided EasyPost label #EP123 per request', time:'just now' },
     { emoji:'📋', name:'Janine', color:'var(--janine)', task:'· QC check', desc:'Shop Drawing 50MA — 1 warning, 0 critical. Sent for review.', time:'just now' },
+    { emoji:'🐿️', name:'Goblin', color:'var(--goblin)', task:'· reminder sent', desc:'client-followup-reminder fired — 3 projects pinged', time:'just now' },
   ];
 
   let actIdx = 0;
