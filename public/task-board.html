@@ -213,6 +213,7 @@
     .col-athena  .column-header { border-left: 3px solid #2dd4bf; }
     .col-scout   .column-header { border-left: 3px solid #fb923c; }
     .col-janine  .column-header { border-left: 3px solid #f472b6; }
+    .col-goblin  .column-header { border-left: 3px solid #84cc16; }
     .col-monitor .column-header { border-left: 3px solid #555; }
 
     /* Subagent card tints */
@@ -221,6 +222,7 @@
     .card.athena-card  { background: #14201e; border-color: #1a3a38; }
     .card.scout-card   { background: #1e1509; border-color: #3a2a12; }
     .card.janine-card  { background: #1e0f17; border-color: #3a1828; }
+    .card.goblin-card  { background: #0d1a00; border-color: #1a3300; }
 
     .subagent-badge {
       position: absolute;
@@ -238,6 +240,7 @@
     .badge-athena { background: #2dd4bf22; color: #2dd4bf; border-color: #2dd4bf44; }
     .badge-scout  { background: #fb923c22; color: #fb923c; border-color: #fb923c44; }
     .badge-janine { background: #f472b622; color: #f472b6; border-color: #f472b644; }
+    .badge-goblin { background: #84cc1622; color: #84cc16; border-color: #84cc1644; }
 
     footer {
       text-align: center;
@@ -268,15 +271,15 @@
   <div class="logo">🎸</div>
   <div>
     <h1>M|R Walls · Agent Task Board</h1>
-    <p>All tasks run by Jimi, Indy, Parcel, Athena, Scout &amp; Janine</p>
+    <p>All tasks run by Jimi, Indy, Parcel, Athena, Scout, Janine &amp; Task Goblin</p>
   </div>
   <div class="badge">LIVE</div>
 </header>
 
 <div class="stats-bar">
-  <div class="stat"><div class="val">24</div><div class="lbl">Total Tasks</div></div>
-  <div class="stat"><div class="val">6</div><div class="lbl">Agents</div></div>
-  <div class="stat"><div class="val">7</div><div class="lbl">Columns</div></div>
+  <div class="stat"><div class="val">27</div><div class="lbl">Total Tasks</div></div>
+  <div class="stat"><div class="val">7</div><div class="lbl">Agents</div></div>
+  <div class="stat"><div class="val">8</div><div class="lbl">Columns</div></div>
   <div class="stat"><div class="val">1</div><div class="lbl">Active Watch</div></div>
 </div>
 
@@ -574,6 +577,51 @@
         <div class="card-footer">
           <div class="agent-chip">📋 Janine</div>
           <span class="trigger-chip">Post-approval</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- TASK GOBLIN -->
+  <div class="column col-goblin">
+    <div class="column-header">
+      <span class="col-icon">🐿️</span>
+      <h2>Task Goblin</h2>
+      <span class="col-count">3</span>
+    </div>
+    <div class="column-body">
+
+      <div class="card goblin-card">
+        <div class="subagent-badge badge-goblin">SUBAGENT</div>
+        <span class="card-label lbl-monitor">Cron</span>
+        <h3>Delivery Address Reminder</h3>
+        <p>Pings sales team if a project is missing a delivery address before shipping.</p>
+        <div class="card-footer">
+          <div class="agent-chip">🐿️ Goblin</div>
+          <span class="trigger-chip">Scheduled</span>
+        </div>
+      </div>
+
+      <div class="card goblin-card">
+        <div class="subagent-badge badge-goblin">SUBAGENT</div>
+        <span class="card-label lbl-monitor">Cron</span>
+        <h3>Client Follow-Up Reminder</h3>
+        <p>Daily 9am weekday nudge — flags projects waiting on client response.</p>
+        <div class="card-footer">
+          <div class="agent-chip">🐿️ Goblin</div>
+          <span class="trigger-chip">9am weekdays</span>
+        </div>
+      </div>
+
+      <div class="card goblin-card">
+        <div class="subagent-badge badge-goblin">SUBAGENT</div>
+        <span class="card-label lbl-comms">Slack</span>
+        <h3>Sales Team Reminders</h3>
+        <p>Sends targeted reminders to Toni, Kamila, and Sawyer on active projects.</p>
+        <div class="card-footer">
+          <div class="agent-chip">🐿️ Goblin</div>
+          <span class="trigger-chip">On trigger</span>
         </div>
       </div>
 
