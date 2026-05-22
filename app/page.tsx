@@ -750,7 +750,7 @@ export default function ShopDrawingQC() {
                       <p className="text-sm text-pink-400">{submitError}</p>
                     )}
                     <button
-                      disabled={(totalIssues > 0 && (!overrideIssues || hasFilenameError)) || !projectNameOverride.trim() || isSubmitting || (renderUrl !== undefined && !renderUrlConfirmed)}
+                      disabled={(totalIssues > 0 && (!overrideIssues || hasFilenameError)) || !projectNameOverride.trim() || isSubmitting || checkingProject || (renderUrl !== undefined && !renderUrlConfirmed)}
                       onClick={async () => {
                         // If render URL not yet checked, check now
                         if (renderUrl === undefined && projectNameOverride.trim()) {
@@ -763,7 +763,6 @@ export default function ShopDrawingQC() {
                             }
                           } catch {}
                           setCheckingProject(false);
-    setOverrideIssues(false);
                           return; // Let user confirm render URL before continuing
                         }
                         setIsSubmitting(true);
@@ -796,7 +795,7 @@ export default function ShopDrawingQC() {
                         }
                       }}
                       className={`px-8 py-3 rounded-xl font-bold text-lg flex items-center justify-center gap-2 transition-colors ${
-                        (totalIssues > 0 && (!overrideIssues || hasFilenameError)) || !projectNameOverride.trim() || isSubmitting || (renderUrl !== undefined && !renderUrlConfirmed)
+                        (totalIssues > 0 && (!overrideIssues || hasFilenameError)) || !projectNameOverride.trim() || isSubmitting || checkingProject || (renderUrl !== undefined && !renderUrlConfirmed)
                           ? 'bg-gray-800 text-gray-500 cursor-not-allowed'
                           : 'bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-400 hover:to-pink-400 text-black'
                       }`}
