@@ -693,9 +693,9 @@ export default function ShopDrawingQC() {
                             if (data.found) {
                               setRenderUrl(data.renderUrl || null);
                             } else {
-                              setRenderUrl(undefined);
+                              setRenderUrl(null); // project not found → show manual URL input
                             }
-                          } catch { setRenderUrl(undefined); }
+                          } catch { setRenderUrl(null); }
                           finally { setCheckingProject(false); }
                         }}
                         placeholder="e.g. 848P - Rosero Garage"
@@ -760,8 +760,10 @@ export default function ShopDrawingQC() {
                             const checkData = await checkRes.json();
                             if (checkData.found) {
                               setRenderUrl(checkData.renderUrl || null);
+                            } else {
+                              setRenderUrl(null); // project not found → show manual URL input
                             }
-                          } catch {}
+                          } catch { setRenderUrl(null); }
                           setCheckingProject(false);
                           return; // Let user confirm render URL before continuing
                         }
