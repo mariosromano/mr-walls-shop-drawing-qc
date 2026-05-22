@@ -12,7 +12,8 @@ export async function GET(req: NextRequest) {
   }
 
   // Use exact match instead of SEARCH to avoid partial matches (e.g. "Fake Project 2" matching "Fake Project")
-  const formula = encodeURIComponent(`{Project Name} = "${projectName.trim()}"`);
+  // TRIM() handles stray leading/trailing spaces in Airtable field values
+  const formula = encodeURIComponent(`TRIM({Project Name}) = "${projectName.trim()}"`);
   const res = await fetch(
     `https://api.airtable.com/v0/${BASE_ID}/Projects?filterByFormula=${formula}&fields[]=Project%20Name&fields[]=Render%20Folder%20URL&fields[]=Slack%20Channel%20ID`,
     { headers: { Authorization: `Bearer ${AIRTABLE_TOKEN}` } }
