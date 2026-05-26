@@ -191,36 +191,11 @@ export async function POST(req: NextRequest) {
     { type: 'divider' },
     {
       type: 'section',
-      text: { type: 'mrkdwn', text: 'PDF attached in this thread 👇 — select an action below:' },
-    },
-    {
-      type: 'actions',
-      elements: [
-        {
-          type: 'button',
-          text: { type: 'plain_text', text: '✅  Approve', emoji: true },
-          style: 'primary',
-          action_id: 'sd_approve',
-          value: 'approve',
-        },
-        {
-          type: 'button',
-          text: { type: 'plain_text', text: '🔄  Request Revision', emoji: true },
-          style: 'danger',
-          action_id: 'sd_revise',
-          value: 'revise',
-        },
-        {
-          type: 'button',
-          text: { type: 'plain_text', text: '💬  Comment Only', emoji: true },
-          action_id: 'sd_comment',
-          value: 'comment',
-        },
-      ],
+      text: { type: 'mrkdwn', text: 'PDF attached in this thread 👇 — reply with `APPROVE` to approve or `REVISE:` followed by your notes to request changes.' },
     },
     {
       type: 'context',
-      elements: [{ type: 'mrkdwn', text: '📋 _Buttons are for review decisions. For general comments, reply in thread._' }],
+      elements: [{ type: 'mrkdwn', text: '📋 _Examples: `APPROVE` — `REVISE: SD1 update the width to 11\'7". SD2 match new width.`_' }],
     },
   ];
 
