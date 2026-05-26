@@ -170,15 +170,65 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // 4. Post to channel — ONE message, becomes the review thread
-  const criticalPart = (overrideIssues && criticalIssues?.length > 0)
-    ? `\n⚠️ *Submitted with ${criticalIssues.length} critical issue(s) — manager review required:*\n` +
-      criticalIssues.map((i: {label: string; notes: string}) => `• *${i.label}:* ${i.notes}`).join('\n')
+  // 4. Post to channel — ONE message with Block Kit review buttons
+  const qcLine = `✅ ${passed} passed  ⚠️ ${warnings} warnings`;
+  const overrideNote = (overrideIssues && criticalIssues?.length > 0)
+    ? `\n⚠️ *Submitted with ${criticalIssues.length} critical issue(s) — manager review required*`
     : '';
-  const notesPart = designerNotes ? `\n📝 *Notes:* ${designerNotes}` : '';
-  const renderPart = renderUrl ? `\n📁 *Render Folder:* <${renderUrl}|Open>` : '';
-  const channelMsg = `${managerMention} Shop drawing ready for review — *${fullProjectName}*\n📄 ${filename}${version ? `  •  ${version}` : ''}\n*QC:* ✅ ${passed} passed  ⚠️ ${warnings} warnings\n\nPDF attached in this thread 👇 — right-click this message and select *Open thread* to view the drawing. Also added to the Revisions and Updates canvas.\n_Reply in this thread to approve or describe revisions._${criticalPart}${notesPart}${renderPart}`;
-  const msgRes = await slackPost('chat.postMessage', { channel: slackChannelId, text: channelMsg });
+  const extraLines = [
+    designerNotes ? `📝 *Notes:* ${designerNotes}` : '',
+    renderUrl ? `📁 *Render Folder:* <${renderUrl}|Open>` : '',
+  ].filter(Boolean).join('\n');
+
+  const reviewBlocks = [
+    {
+      type: 'section',
+      text: {
+        type: 'mrkdwn',
+        text: `${managerMention} Shop drawing ready for review — *${fullProjectName}*\n📄 ${filename}${version ? `  •  ${version}` : ''}\n*QC:* ${qcLine}${overrideNote}${extraLines ? '\n' + extraLines : ''}`,
+      },
+    },
+    { type: 'divider' },
+    {
+      type: 'section',
+      text: { type: 'mrkdwn', text: 'PDF attached in this thread 👇 — select an action below:' },
+    },
+    {
+      type: 'actions',
+      elements: [
+        {
+          type: 'button',
+          text: { type: 'plain_text', text: '✅  Approve', emoji: true },
+          style: 'primary',
+          action_id: 'sd_approve',
+          value: 'approve',
+        },
+        {
+          type: 'button',
+          text: { type: 'plain_text', text: '🔄  Request Revision', emoji: true },
+          style: 'danger',
+          action_id: 'sd_revise',
+          value: 'revise',
+        },
+        {
+          type: 'button',
+          text: { type: 'plain_text', text: '💬  Comment Only', emoji: true },
+          action_id: 'sd_comment',
+          value: 'comment',
+        },
+      ],
+    },
+    {
+      type: 'context',
+      elements: [{ type: 'mrkdwn', text: '📋 _Buttons are for review decisions. For general comments, reply in thread._' }],
+    },
+  ];
+
+  const msgRes = await slackPost('chat.postMessage', {
+    channel: slackChannelId,
+    text: `${managerMention} Shop drawing ready for review — ${fullProjectName}`,
+    blocks: reviewBlocks,
+  });
   const messageTs = msgRes.ts;
 
   // 4b. Now complete the PDF upload INTO the thread (file appears as thread reply, not a new channel message)
