@@ -344,7 +344,7 @@ export default function ShopDrawingQC() {
               <div className="text-left">
                 <h1 className="text-3xl font-bold text-white">Shop Drawing Checker</h1>
                 <p className="text-gray-400">Self-Review Aid</p>
-                <p className="text-gray-500 text-xs mt-0.5">Updated Apr 2, 2026</p>
+                <p className="text-gray-500 text-xs mt-0.5">Updated May 26, 2026</p>
               </div>
               <div className="ml-2">
                 <Smile className="text-pink-400" size={32} />
