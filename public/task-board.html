@@ -911,7 +911,8 @@
 
 
 <script>
-  const PRIORITY_URL = 'http://192.168.1.90:5005/tasks';
+  const isLocal = window.location.hostname === '192.168.1.90' || window.location.hostname === 'localhost';
+  const PRIORITY_URL = isLocal ? '/tasks' : 'http://192.168.1.90:5005/tasks';
 
   function catClass(cat) {
     if (!cat) return 'cat-other';
@@ -948,7 +949,7 @@
     } catch(e) {
       dot.className = 'queue-dot error';
       status.innerHTML = '<span class="queue-dot error"></span> Offline';
-      list.innerHTML = '<div class="queue-offline">⚡ Priority board not reachable — connect to local network to view queue.</div>';
+      list.innerHTML = '<div class="queue-offline">⚡ HTTPS blocks local fetches — open the queue at <a href="http://192.168.1.90:5005/task-board.html" style="color:#7c3aed;">192.168.1.90:5005/task-board.html</a> while on the office network.</div>';
     }
   }
 
