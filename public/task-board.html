@@ -283,6 +283,108 @@
       0%, 100% { opacity: 1; }
       50% { opacity: 0.4; }
     }
+
+    /* ── In the Queue section ── */
+    .queue-section {
+      margin: 20px 32px 0;
+      background: #13131e;
+      border: 1px solid #2a2a3a;
+      border-left: 3px solid #7c3aed;
+      border-radius: 14px;
+      padding: 18px 22px 16px;
+    }
+
+    .queue-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .queue-icon { font-size: 1.3rem; }
+
+    .queue-title {
+      font-size: 0.88rem;
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: -0.2px;
+    }
+
+    .queue-sub {
+      font-size: 0.72rem;
+      color: #555;
+      margin-top: 1px;
+    }
+
+    .queue-status {
+      margin-left: auto;
+      font-size: 0.7rem;
+      color: #555;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .queue-dot {
+      display: inline-block;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #555;
+    }
+
+    .queue-dot.live { background: #22c55e; animation: pulse 2s infinite; }
+    .queue-dot.error { background: #f87171; }
+
+    .queue-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .queue-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #1a1a2a;
+      border: 1px solid #2a2a3a;
+      border-radius: 8px;
+      padding: 7px 12px;
+      font-size: 0.8rem;
+      color: #d0d0e8;
+    }
+
+    .queue-cat {
+      font-size: 0.65rem;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 5px;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+
+    .cat-dev   { background: #1e3a5f; color: #60a5fa; }
+    .cat-admin { background: #3d2a1e; color: #fb923c; }
+    .cat-design { background: #3d1e5f; color: #c084fc; }
+    .cat-other { background: #2a2a2a; color: #888; }
+
+    .queue-est {
+      font-size: 0.68rem;
+      color: #444;
+      margin-left: 2px;
+    }
+
+    .queue-loading {
+      font-size: 0.78rem;
+      color: #444;
+      font-style: italic;
+    }
+
+    .queue-offline {
+      font-size: 0.78rem;
+      color: #555;
+    }
+
   </style>
 </head>
 <body>
@@ -301,6 +403,22 @@
   <div class="stat"><div class="val">7</div><div class="lbl">Agents</div></div>
   <div class="stat"><div class="val">8</div><div class="lbl">Rows</div></div>
   <div class="stat"><div class="val">1</div><div class="lbl">Active Watch</div></div>
+</div>
+
+<div class="queue-section">
+  <div class="queue-header">
+    <span class="queue-icon">⏱️</span>
+    <div>
+      <div class="queue-title">In the Queue — Jimi Block</div>
+      <div class="queue-sub">Live from Samantha's Priority Board</div>
+    </div>
+    <div class="queue-status" id="queue-status">
+      <span class="queue-dot"></span> Loading…
+    </div>
+  </div>
+  <div class="queue-list" id="queue-list">
+    <div class="queue-loading">Fetching tasks…</div>
+  </div>
 </div>
 
 <div class="board">
@@ -791,5 +909,51 @@
   M|R Walls · Agent Task Board · Santa Monica, CA · Updated May 28, 2026 🎸
 </footer>
 
+
+<script>
+  const PRIORITY_URL = 'http://192.168.1.90:5005/tasks';
+
+  function catClass(cat) {
+    if (!cat) return 'cat-other';
+    const c = cat.toLowerCase();
+    if (c === 'dev') return 'cat-dev';
+    if (c === 'admin') return 'cat-admin';
+    if (c === 'design') return 'cat-design';
+    return 'cat-other';
+  }
+
+  async function loadQueue() {
+    const list = document.getElementById('queue-list');
+    const status = document.getElementById('queue-status');
+    const dot = status.querySelector('.queue-dot');
+    try {
+      const r = await fetch(PRIORITY_URL, { signal: AbortSignal.timeout(4000) });
+      const data = await r.json();
+      const tasks = data.jimiBlock || [];
+      dot.className = 'queue-dot live';
+      status.innerHTML = '<span class="queue-dot live"></span> Live · ' + tasks.length + ' tasks';
+      if (tasks.length === 0) {
+        list.innerHTML = '<div class="queue-loading">Queue is empty — nothing pending 🎸</div>';
+        return;
+      }
+      list.innerHTML = tasks.map(t => {
+        const cat = t.category || 'Other';
+        const est = t.est && t.est !== '?' ? `<span class="queue-est">${t.est}</span>` : '';
+        return `<div class="queue-item">
+          <span class="queue-cat ${catClass(cat)}">${cat}</span>
+          ${t.text}
+          ${est}
+        </div>`;
+      }).join('');
+    } catch(e) {
+      dot.className = 'queue-dot error';
+      status.innerHTML = '<span class="queue-dot error"></span> Offline';
+      list.innerHTML = '<div class="queue-offline">⚡ Priority board not reachable — connect to local network to view queue.</div>';
+    }
+  }
+
+  loadQueue();
+  setInterval(loadQueue, 30000);
+</script>
 </body>
 </html>
