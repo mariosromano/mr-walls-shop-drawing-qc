@@ -76,63 +76,93 @@
       margin-top: 2px;
     }
 
+    /* ── BOARD: rows ── */
     .board {
       display: flex;
-      gap: 20px;
+      flex-direction: column;
+      gap: 16px;
       padding: 24px 32px 32px;
-      overflow-x: auto;
+    }
+
+    .agent-row {
+      display: flex;
+      gap: 16px;
       align-items: flex-start;
     }
 
-    .column {
-      background: #1a1a1a;
-      border-radius: 14px;
-      border: 1px solid #2a2a2a;
-      min-width: 272px;
-      max-width: 272px;
+    /* Left panel — agent identity */
+    .agent-label {
+      min-width: 172px;
+      max-width: 172px;
       flex-shrink: 0;
-    }
-
-    .column-header {
-      padding: 16px 18px 12px;
-      border-bottom: 1px solid #2a2a2a;
+      background: #1a1a1a;
+      border: 1px solid #2a2a2a;
+      border-radius: 14px;
+      padding: 18px 16px;
       display: flex;
-      align-items: center;
-      gap: 10px;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 4px;
+      align-self: stretch;
+      justify-content: center;
     }
 
-    .column-header .col-icon { font-size: 1.1rem; }
+    .agent-label .agent-icon {
+      font-size: 1.8rem;
+      line-height: 1;
+      margin-bottom: 6px;
+    }
 
-    .column-header h2 {
-      font-size: 0.85rem;
-      font-weight: 700;
+    .agent-label .agent-name {
+      font-size: 0.92rem;
+      font-weight: 800;
       color: #fff;
-      text-transform: uppercase;
-      letter-spacing: 0.8px;
+      letter-spacing: -0.3px;
     }
 
-    .col-count {
-      margin-left: auto;
+    .agent-label .agent-title {
+      font-size: 0.72rem;
+      color: #666;
+      line-height: 1.3;
+    }
+
+    .agent-label .agent-count {
+      margin-top: 10px;
       background: #2a2a2a;
       color: #a0aec0;
-      font-size: 0.72rem;
+      font-size: 0.7rem;
       font-weight: 700;
       padding: 2px 8px;
       border-radius: 10px;
+      align-self: flex-start;
     }
 
-    .column-body {
-      padding: 12px;
+    /* Accent border per agent */
+    .row-jimi   .agent-label { border-left: 3px solid #7c3aed; }
+    .row-indy   .agent-label { border-left: 3px solid #f59e0b; }
+    .row-parcel .agent-label { border-left: 3px solid #34d399; }
+    .row-athena .agent-label { border-left: 3px solid #2dd4bf; }
+    .row-scout  .agent-label { border-left: 3px solid #fb923c; }
+    .row-janine .agent-label { border-left: 3px solid #f472b6; }
+    .row-goblin .agent-label { border-left: 3px solid #84cc16; }
+    .row-monitor .agent-label { border-left: 3px solid #555; }
+
+    /* Task cards container — horizontal scroll */
+    .task-list {
       display: flex;
-      flex-direction: column;
-      gap: 10px;
+      gap: 12px;
+      flex-wrap: wrap;
+      flex: 1;
     }
 
+    /* Cards */
     .card {
       background: #242424;
       border: 1px solid #333;
       border-radius: 10px;
       padding: 13px 14px;
+      width: 240px;
+      flex-shrink: 0;
       transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s;
       cursor: default;
       position: relative;
@@ -206,16 +236,6 @@
     .lbl-subagent { background: #1e3d3d; color: #2dd4bf; }
     .lbl-data     { background: #3d3d1e; color: #fbbf24; }
 
-    /* Column accent border */
-    .col-jimi    .column-header { border-left: 3px solid #7c3aed; }
-    .col-indy    .column-header { border-left: 3px solid #f59e0b; }
-    .col-parcel  .column-header { border-left: 3px solid #34d399; }
-    .col-athena  .column-header { border-left: 3px solid #2dd4bf; }
-    .col-scout   .column-header { border-left: 3px solid #fb923c; }
-    .col-janine  .column-header { border-left: 3px solid #f472b6; }
-    .col-goblin  .column-header { border-left: 3px solid #84cc16; }
-    .col-monitor .column-header { border-left: 3px solid #555; }
-
     /* Subagent card tints */
     .card.indy-card    { background: #1e1c14; border-color: #3a3018; }
     .card.parcel-card  { background: #141e1a; border-color: #1e3a2a; }
@@ -279,20 +299,21 @@
 <div class="stats-bar">
   <div class="stat"><div class="val">30</div><div class="lbl">Total Tasks</div></div>
   <div class="stat"><div class="val">7</div><div class="lbl">Agents</div></div>
-  <div class="stat"><div class="val">8</div><div class="lbl">Columns</div></div>
+  <div class="stat"><div class="val">8</div><div class="lbl">Rows</div></div>
   <div class="stat"><div class="val">1</div><div class="lbl">Active Watch</div></div>
 </div>
 
 <div class="board">
 
   <!-- JIMI -->
-  <div class="column col-jimi">
-    <div class="column-header">
-      <span class="col-icon">🎸</span>
-      <h2>Jimi</h2>
-      <span class="col-count">4</span>
+  <div class="agent-row row-jimi">
+    <div class="agent-label">
+      <div class="agent-icon">🎸</div>
+      <div class="agent-name">Jimi</div>
+      <div class="agent-title">Studio AI Assistant</div>
+      <div class="agent-count">4 tasks</div>
     </div>
-    <div class="column-body">
+    <div class="task-list">
 
       <div class="card">
         <span class="card-label lbl-assets">Dash DAM</span>
@@ -338,13 +359,14 @@
   </div>
 
   <!-- INDY -->
-  <div class="column col-indy">
-    <div class="column-header">
-      <span class="col-icon">🐍</span>
-      <h2>Indy</h2>
-      <span class="col-count">4</span>
+  <div class="agent-row row-indy">
+    <div class="agent-label">
+      <div class="agent-icon">🐍</div>
+      <div class="agent-name">Indy</div>
+      <div class="agent-title">Carlo's Action Agent</div>
+      <div class="agent-count">4 tasks</div>
     </div>
-    <div class="column-body">
+    <div class="task-list">
 
       <div class="card indy-card">
         <div class="subagent-badge badge-indy">SUBAGENT</div>
@@ -394,13 +416,14 @@
   </div>
 
   <!-- PARCEL -->
-  <div class="column col-parcel">
-    <div class="column-header">
-      <span class="col-icon">📦</span>
-      <h2>Parcel</h2>
-      <span class="col-count">4</span>
+  <div class="agent-row row-parcel">
+    <div class="agent-label">
+      <div class="agent-icon">📦</div>
+      <div class="agent-name">Parcel</div>
+      <div class="agent-title">Shipping Agent</div>
+      <div class="agent-count">4 tasks</div>
     </div>
-    <div class="column-body">
+    <div class="task-list">
 
       <div class="card parcel-card">
         <div class="subagent-badge badge-parcel">SUBAGENT</div>
@@ -450,13 +473,14 @@
   </div>
 
   <!-- ATHENA -->
-  <div class="column col-athena">
-    <div class="column-header">
-      <span class="col-icon">⚔️</span>
-      <h2>Athena</h2>
-      <span class="col-count">2</span>
+  <div class="agent-row row-athena">
+    <div class="agent-label">
+      <div class="agent-icon">⚔️</div>
+      <div class="agent-name">Athena</div>
+      <div class="agent-title">Technical Advisor</div>
+      <div class="agent-count">2 tasks</div>
     </div>
-    <div class="column-body">
+    <div class="task-list">
 
       <div class="card athena-card">
         <div class="subagent-badge badge-athena">SUBAGENT</div>
@@ -484,13 +508,14 @@
   </div>
 
   <!-- SCOUT -->
-  <div class="column col-scout">
-    <div class="column-header">
-      <span class="col-icon">📡</span>
-      <h2>Scout</h2>
-      <span class="col-count">3</span>
+  <div class="agent-row row-scout">
+    <div class="agent-label">
+      <div class="agent-icon">📡</div>
+      <div class="agent-name">Scout</div>
+      <div class="agent-title">Intel &amp; Digest Agent</div>
+      <div class="agent-count">3 tasks</div>
     </div>
-    <div class="column-body">
+    <div class="task-list">
 
       <div class="card scout-card">
         <div class="subagent-badge badge-scout">SUBAGENT</div>
@@ -529,13 +554,14 @@
   </div>
 
   <!-- JANINE -->
-  <div class="column col-janine">
-    <div class="column-header">
-      <span class="col-icon">📋</span>
-      <h2>Janine</h2>
-      <span class="col-count">7</span>
+  <div class="agent-row row-janine">
+    <div class="agent-label">
+      <div class="agent-icon">📋</div>
+      <div class="agent-name">Janine</div>
+      <div class="agent-title">Project Secretary</div>
+      <div class="agent-count">7 tasks</div>
     </div>
-    <div class="column-body">
+    <div class="task-list">
 
       <div class="card janine-card">
         <div class="subagent-badge badge-janine">SUBAGENT</div>
@@ -618,13 +644,14 @@
   </div>
 
   <!-- TASK GOBLIN -->
-  <div class="column col-goblin">
-    <div class="column-header">
-      <span class="col-icon">🐿️</span>
-      <h2>Task Goblin</h2>
-      <span class="col-count">3</span>
+  <div class="agent-row row-goblin">
+    <div class="agent-label">
+      <div class="agent-icon">🐿️</div>
+      <div class="agent-name">Task Goblin</div>
+      <div class="agent-title">Scheduler</div>
+      <div class="agent-count">3 tasks</div>
     </div>
-    <div class="column-body">
+    <div class="task-list">
 
       <div class="card goblin-card">
         <div class="subagent-badge badge-goblin">SUBAGENT</div>
@@ -663,13 +690,14 @@
   </div>
 
   <!-- MONITORING -->
-  <div class="column col-monitor">
-    <div class="column-header">
-      <span class="col-icon">📡</span>
-      <h2>Monitoring</h2>
-      <span class="col-count">2</span>
+  <div class="agent-row row-monitor">
+    <div class="agent-label">
+      <div class="agent-icon">📡</div>
+      <div class="agent-name">Monitoring</div>
+      <div class="agent-title">Active Watches</div>
+      <div class="agent-count">2 tasks</div>
     </div>
-    <div class="column-body">
+    <div class="task-list">
 
       <div class="card">
         <span class="card-label lbl-monitor">Heartbeat</span>
