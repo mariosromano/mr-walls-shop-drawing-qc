@@ -297,7 +297,7 @@
 </header>
 
 <div class="stats-bar">
-  <div class="stat"><div class="val">30</div><div class="lbl">Total Tasks</div></div>
+  <div class="stat"><div class="val">36</div><div class="lbl">Total Tasks</div></div>
   <div class="stat"><div class="val">7</div><div class="lbl">Agents</div></div>
   <div class="stat"><div class="val">8</div><div class="lbl">Rows</div></div>
   <div class="stat"><div class="val">1</div><div class="lbl">Active Watch</div></div>
@@ -311,7 +311,7 @@
       <div class="agent-icon">🎸</div>
       <div class="agent-name">Jimi</div>
       <div class="agent-title">Studio AI Assistant</div>
-      <div class="agent-count">4 tasks</div>
+      <div class="agent-count">6 tasks</div>
     </div>
     <div class="task-list">
 
@@ -352,6 +352,26 @@
         <div class="card-footer">
           <div class="agent-chip">🎸 Jimi</div>
           <span class="trigger-chip">On request</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <span class="card-label lbl-assets">FAL AI</span>
+        <h3>Image Generation</h3>
+        <p>Generate renders and concept images via FAL.ai API on request.</p>
+        <div class="card-footer">
+          <div class="agent-chip">🎸 Jimi</div>
+          <span class="trigger-chip">On request</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <span class="card-label lbl-data">Dash DAM</span>
+        <h3>Token Auto-Refresh</h3>
+        <p>Runs dash-token-refresh.py before each Dash session — no manual re-auth needed.</p>
+        <div class="card-footer">
+          <div class="agent-chip">🎸 Jimi</div>
+          <span class="trigger-chip">Pre-session</span>
         </div>
       </div>
 
@@ -454,7 +474,7 @@
       <div class="agent-icon">🐍</div>
       <div class="agent-name">Indy</div>
       <div class="agent-title">Carlo's Action Agent</div>
-      <div class="agent-count">4 tasks</div>
+      <div class="agent-count">5 tasks</div>
     </div>
     <div class="task-list">
 
@@ -502,6 +522,17 @@
         </div>
       </div>
 
+      <div class="card indy-card">
+        <div class="subagent-badge badge-indy">SUBAGENT</div>
+        <span class="card-label lbl-data">Airtable</span>
+        <h3>Project Lookup &amp; Status</h3>
+        <p>Quick on-demand Airtable lookups — project status, phase, tasks, contacts.</p>
+        <div class="card-footer">
+          <div class="agent-chip">🐍 Indy</div>
+          <span class="trigger-chip">Carlo triggers</span>
+        </div>
+      </div>
+
     </div>
   </div>
 
@@ -511,7 +542,7 @@
       <div class="agent-icon">📡</div>
       <div class="agent-name">Scout</div>
       <div class="agent-title">Intel &amp; Digest Agent</div>
-      <div class="agent-count">3 tasks</div>
+      <div class="agent-count">4 tasks</div>
     </div>
     <div class="task-list">
 
@@ -545,6 +576,17 @@
         <div class="card-footer">
           <div class="agent-chip">📡 Scout</div>
           <span class="trigger-chip">8:30am weekdays</span>
+        </div>
+      </div>
+
+      <div class="card scout-card">
+        <div class="subagent-badge badge-scout">SUBAGENT</div>
+        <span class="card-label lbl-monitor">Digest</span>
+        <h3>EOD Mention Check</h3>
+        <p>4pm weekday sweep — catches any @Carlo mentions or urgent items before end of day.</p>
+        <div class="card-footer">
+          <div class="agent-chip">📡 Scout</div>
+          <span class="trigger-chip">4pm weekdays</span>
         </div>
       </div>
 
@@ -649,7 +691,7 @@
       <div class="agent-icon">🐿️</div>
       <div class="agent-name">Task Goblin</div>
       <div class="agent-title">Scheduler</div>
-      <div class="agent-count">3 tasks</div>
+      <div class="agent-count">4 tasks</div>
     </div>
     <div class="task-list">
 
@@ -686,6 +728,17 @@
         </div>
       </div>
 
+      <div class="card goblin-card">
+        <div class="subagent-badge badge-goblin">SUBAGENT</div>
+        <span class="card-label lbl-monitor">Cron</span>
+        <h3>Missing PO / Deposit Reminder</h3>
+        <p>Flags projects past a phase milestone with no deposit or PO on record.</p>
+        <div class="card-footer">
+          <div class="agent-chip">🐿️ Goblin</div>
+          <span class="trigger-chip">Scheduled</span>
+        </div>
+      </div>
+
     </div>
   </div>
 
@@ -695,7 +748,7 @@
       <div class="agent-icon">📡</div>
       <div class="agent-name">Monitoring</div>
       <div class="agent-title">Active Watches</div>
-      <div class="agent-count">2 tasks</div>
+      <div class="agent-count">3 tasks</div>
     </div>
     <div class="task-list">
 
@@ -716,6 +769,16 @@
         <div class="card-footer">
           <div class="agent-chip">🎸 Jimi</div>
           <span class="trigger-chip">Scheduled</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <span class="card-label lbl-monitor">Heartbeat</span>
+        <h3>Dash DAM Token Watch</h3>
+        <p>Alerts if the Dash refresh token expires or needs re-authorization.</p>
+        <div class="card-footer">
+          <div class="agent-chip">🎸 Jimi</div>
+          <span class="trigger-chip">On expiry</span>
         </div>
       </div>
 
