@@ -277,7 +277,7 @@
 </header>
 
 <div class="stats-bar">
-  <div class="stat"><div class="val">27</div><div class="lbl">Total Tasks</div></div>
+  <div class="stat"><div class="val">30</div><div class="lbl">Total Tasks</div></div>
   <div class="stat"><div class="val">7</div><div class="lbl">Agents</div></div>
   <div class="stat"><div class="val">8</div><div class="lbl">Columns</div></div>
   <div class="stat"><div class="val">1</div><div class="lbl">Active Watch</div></div>
@@ -290,7 +290,7 @@
     <div class="column-header">
       <span class="col-icon">🎸</span>
       <h2>Jimi</h2>
-      <span class="col-count">5</span>
+      <span class="col-count">4</span>
     </div>
     <div class="column-body">
 
@@ -311,16 +311,6 @@
         <div class="card-footer">
           <div class="agent-chip">🎸 Jimi</div>
           <span class="trigger-chip">Post-approval</span>
-        </div>
-      </div>
-
-      <div class="card">
-        <span class="card-label lbl-data">Airtable</span>
-        <h3>BOL Airtable Input</h3>
-        <p>Parse Bill of Lading PDF and enter shipping data into Airtable records.</p>
-        <div class="card-footer">
-          <div class="agent-chip">🎸 Jimi</div>
-          <span class="trigger-chip">On BOL receipt</span>
         </div>
       </div>
 
@@ -352,7 +342,7 @@
     <div class="column-header">
       <span class="col-icon">🐍</span>
       <h2>Indy</h2>
-      <span class="col-count">5</span>
+      <span class="col-count">4</span>
     </div>
     <div class="column-body">
 
@@ -372,17 +362,6 @@
         <span class="card-label lbl-project">Airtable</span>
         <h3>Paid In Full Workflow</h3>
         <p>Set Paid field, mark Final Balance task complete, log note to Notes Log.</p>
-        <div class="card-footer">
-          <div class="agent-chip">🐍 Indy</div>
-          <span class="trigger-chip">Carlo triggers</span>
-        </div>
-      </div>
-
-      <div class="card indy-card">
-        <div class="subagent-badge badge-indy">SUBAGENT</div>
-        <span class="card-label lbl-project">Airtable</span>
-        <h3>Archive SPEC DA Channel</h3>
-        <p>Move project to archive phase, update Airtable, archive Slack channel.</p>
         <div class="card-footer">
           <div class="agent-chip">🐍 Indy</div>
           <span class="trigger-chip">Carlo triggers</span>
@@ -509,7 +488,7 @@
     <div class="column-header">
       <span class="col-icon">📡</span>
       <h2>Scout</h2>
-      <span class="col-count">2</span>
+      <span class="col-count">3</span>
     </div>
     <div class="column-body">
 
@@ -535,6 +514,17 @@
         </div>
       </div>
 
+      <div class="card scout-card">
+        <div class="subagent-badge badge-scout">SUBAGENT</div>
+        <span class="card-label lbl-monitor">Digest</span>
+        <h3>Morning Brief to Samantha</h3>
+        <p>Daily briefing in #samantha — project counts, Slack highlights, urgent items, Jimi Block tasks.</p>
+        <div class="card-footer">
+          <div class="agent-chip">📡 Scout</div>
+          <span class="trigger-chip">8:30am weekdays</span>
+        </div>
+      </div>
+
     </div>
   </div>
 
@@ -543,7 +533,7 @@
     <div class="column-header">
       <span class="col-icon">📋</span>
       <h2>Janine</h2>
-      <span class="col-count">3</span>
+      <span class="col-count">7</span>
     </div>
     <div class="column-body">
 
@@ -577,6 +567,50 @@
         <div class="card-footer">
           <div class="agent-chip">📋 Janine</div>
           <span class="trigger-chip">Post-approval</span>
+        </div>
+      </div>
+
+      <div class="card janine-card">
+        <div class="subagent-badge badge-janine">SUBAGENT</div>
+        <span class="card-label lbl-data">Airtable</span>
+        <h3>BOL Airtable Input</h3>
+        <p>Parse Bill of Lading PDF and enter shipping data into Airtable records.</p>
+        <div class="card-footer">
+          <div class="agent-chip">📋 Janine</div>
+          <span class="trigger-chip">On BOL receipt</span>
+        </div>
+      </div>
+
+      <div class="card janine-card">
+        <div class="subagent-badge badge-janine">SUBAGENT</div>
+        <span class="card-label lbl-project">Airtable</span>
+        <h3>Archive SPEC DA Channel</h3>
+        <p>Move project to archive phase, update Airtable, archive Slack channel.</p>
+        <div class="card-footer">
+          <div class="agent-chip">📋 Janine</div>
+          <span class="trigger-chip">On request</span>
+        </div>
+      </div>
+
+      <div class="card janine-card">
+        <div class="subagent-badge badge-janine">SUBAGENT</div>
+        <span class="card-label lbl-shipping">Shipping</span>
+        <h3>Crate Dims → Shipping Record</h3>
+        <p>Takes crate dimensions from install doc and logs them to the Airtable shipping record.</p>
+        <div class="card-footer">
+          <div class="agent-chip">📋 Janine</div>
+          <span class="trigger-chip">On install doc</span>
+        </div>
+      </div>
+
+      <div class="card janine-card">
+        <div class="subagent-badge badge-janine">SUBAGENT</div>
+        <span class="card-label lbl-monitor">Docs</span>
+        <h3>Install Doc Monitoring</h3>
+        <p>Watches #install-doc for new documents, extracts crate dims, updates Airtable.</p>
+        <div class="card-footer">
+          <div class="agent-chip">📋 Janine</div>
+          <span class="trigger-chip">Ongoing</span>
         </div>
       </div>
 
@@ -663,7 +697,7 @@
 </div>
 
 <footer>
-  M|R Walls · Agent Task Board · Santa Monica, CA · Updated May 21, 2026 🎸
+  M|R Walls · Agent Task Board · Santa Monica, CA · Updated May 28, 2026 🎸
 </footer>
 
 </body>
