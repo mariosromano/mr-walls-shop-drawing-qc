@@ -358,6 +358,96 @@
     </div>
   </div>
 
+  <!-- JANINE -->
+  <div class="agent-row row-janine">
+    <div class="agent-label">
+      <div class="agent-icon">📋</div>
+      <div class="agent-name">Janine</div>
+      <div class="agent-title">Project Secretary</div>
+      <div class="agent-count">7 tasks</div>
+    </div>
+    <div class="task-list">
+
+      <div class="card janine-card">
+        <div class="subagent-badge badge-janine">SUBAGENT</div>
+        <span class="card-label lbl-assets">Shop Drawing</span>
+        <h3>Shop Drawing QC Check</h3>
+        <p>Run drawing through QC checker, score Pass / Warning / Critical / Manual.</p>
+        <div class="card-footer">
+          <div class="agent-chip">📋 Janine</div>
+          <span class="trigger-chip">On submission</span>
+        </div>
+      </div>
+
+      <div class="card janine-card">
+        <div class="subagent-badge badge-janine">SUBAGENT</div>
+        <span class="card-label lbl-project">Airtable</span>
+        <h3>5-Day No-Action Nudge</h3>
+        <p>Check Custom Reminder Date → send Slack update request if overdue.</p>
+        <div class="card-footer">
+          <div class="agent-chip">📋 Janine</div>
+          <span class="trigger-chip">Scheduled</span>
+        </div>
+      </div>
+
+      <div class="card janine-card">
+        <div class="subagent-badge badge-janine">SUBAGENT</div>
+        <span class="card-label lbl-comms">Notes</span>
+        <h3>Approval Notes &amp; Submissions</h3>
+        <p>Logs drawing approvals to Notes Log with PDF, render link, and Slack notification.</p>
+        <div class="card-footer">
+          <div class="agent-chip">📋 Janine</div>
+          <span class="trigger-chip">Post-approval</span>
+        </div>
+      </div>
+
+      <div class="card janine-card">
+        <div class="subagent-badge badge-janine">SUBAGENT</div>
+        <span class="card-label lbl-data">Airtable</span>
+        <h3>BOL Airtable Input</h3>
+        <p>Parse Bill of Lading PDF and enter shipping data into Airtable records.</p>
+        <div class="card-footer">
+          <div class="agent-chip">📋 Janine</div>
+          <span class="trigger-chip">On BOL receipt</span>
+        </div>
+      </div>
+
+      <div class="card janine-card">
+        <div class="subagent-badge badge-janine">SUBAGENT</div>
+        <span class="card-label lbl-project">Airtable</span>
+        <h3>Archive SPEC DA Channel</h3>
+        <p>Move project to archive phase, update Airtable, archive Slack channel.</p>
+        <div class="card-footer">
+          <div class="agent-chip">📋 Janine</div>
+          <span class="trigger-chip">On request</span>
+        </div>
+      </div>
+
+      <div class="card janine-card">
+        <div class="subagent-badge badge-janine">SUBAGENT</div>
+        <span class="card-label lbl-shipping">Shipping</span>
+        <h3>Crate Dims → Shipping Record</h3>
+        <p>Takes crate dimensions from install doc and logs them to the Airtable shipping record.</p>
+        <div class="card-footer">
+          <div class="agent-chip">📋 Janine</div>
+          <span class="trigger-chip">On install doc</span>
+        </div>
+      </div>
+
+      <div class="card janine-card">
+        <div class="subagent-badge badge-janine">SUBAGENT</div>
+        <span class="card-label lbl-monitor">Docs</span>
+        <h3>Install Doc Monitoring</h3>
+        <p>Watches #install-doc for new documents, extracts crate dims, updates Airtable.</p>
+        <div class="card-footer">
+          <div class="agent-chip">📋 Janine</div>
+          <span class="trigger-chip">Ongoing</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
   <!-- INDY -->
   <div class="agent-row row-indy">
     <div class="agent-label">
@@ -409,6 +499,52 @@
         <div class="card-footer">
           <div class="agent-chip">🐍 Indy</div>
           <span class="trigger-chip">On request</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- SCOUT -->
+  <div class="agent-row row-scout">
+    <div class="agent-label">
+      <div class="agent-icon">📡</div>
+      <div class="agent-name">Scout</div>
+      <div class="agent-title">Intel &amp; Digest Agent</div>
+      <div class="agent-count">3 tasks</div>
+    </div>
+    <div class="task-list">
+
+      <div class="card scout-card">
+        <div class="subagent-badge badge-scout">SUBAGENT</div>
+        <span class="card-label lbl-monitor">Slack</span>
+        <h3>Channel Scanning</h3>
+        <p>Silently scans 100+ Slack channels, filters noise, surfaces what matters to Carlo.</p>
+        <div class="card-footer">
+          <div class="agent-chip">📡 Scout</div>
+          <span class="trigger-chip">Ongoing</span>
+        </div>
+      </div>
+
+      <div class="card scout-card">
+        <div class="subagent-badge badge-scout">SUBAGENT</div>
+        <span class="card-label lbl-monitor">Digest</span>
+        <h3>Morning Digest to Carlo</h3>
+        <p>Daily briefing DM to Carlo — flags urgent items, mentions, client messages.</p>
+        <div class="card-footer">
+          <div class="agent-chip">📡 Scout</div>
+          <span class="trigger-chip">Scheduled</span>
+        </div>
+      </div>
+
+      <div class="card scout-card">
+        <div class="subagent-badge badge-scout">SUBAGENT</div>
+        <span class="card-label lbl-monitor">Digest</span>
+        <h3>Morning Brief to Samantha</h3>
+        <p>Daily briefing in #samantha — project counts, Slack highlights, urgent items, Jimi Block tasks.</p>
+        <div class="card-footer">
+          <div class="agent-chip">📡 Scout</div>
+          <span class="trigger-chip">8:30am weekdays</span>
         </div>
       </div>
 
@@ -501,142 +637,6 @@
         <div class="card-footer">
           <div class="agent-chip">⚔️ Athena</div>
           <span class="trigger-chip">First contact</span>
-        </div>
-      </div>
-
-    </div>
-  </div>
-
-  <!-- SCOUT -->
-  <div class="agent-row row-scout">
-    <div class="agent-label">
-      <div class="agent-icon">📡</div>
-      <div class="agent-name">Scout</div>
-      <div class="agent-title">Intel &amp; Digest Agent</div>
-      <div class="agent-count">3 tasks</div>
-    </div>
-    <div class="task-list">
-
-      <div class="card scout-card">
-        <div class="subagent-badge badge-scout">SUBAGENT</div>
-        <span class="card-label lbl-monitor">Slack</span>
-        <h3>Channel Scanning</h3>
-        <p>Silently scans 100+ Slack channels, filters noise, surfaces what matters to Carlo.</p>
-        <div class="card-footer">
-          <div class="agent-chip">📡 Scout</div>
-          <span class="trigger-chip">Ongoing</span>
-        </div>
-      </div>
-
-      <div class="card scout-card">
-        <div class="subagent-badge badge-scout">SUBAGENT</div>
-        <span class="card-label lbl-monitor">Digest</span>
-        <h3>Morning Digest to Carlo</h3>
-        <p>Daily briefing DM to Carlo — flags urgent items, mentions, client messages.</p>
-        <div class="card-footer">
-          <div class="agent-chip">📡 Scout</div>
-          <span class="trigger-chip">Scheduled</span>
-        </div>
-      </div>
-
-      <div class="card scout-card">
-        <div class="subagent-badge badge-scout">SUBAGENT</div>
-        <span class="card-label lbl-monitor">Digest</span>
-        <h3>Morning Brief to Samantha</h3>
-        <p>Daily briefing in #samantha — project counts, Slack highlights, urgent items, Jimi Block tasks.</p>
-        <div class="card-footer">
-          <div class="agent-chip">📡 Scout</div>
-          <span class="trigger-chip">8:30am weekdays</span>
-        </div>
-      </div>
-
-    </div>
-  </div>
-
-  <!-- JANINE -->
-  <div class="agent-row row-janine">
-    <div class="agent-label">
-      <div class="agent-icon">📋</div>
-      <div class="agent-name">Janine</div>
-      <div class="agent-title">Project Secretary</div>
-      <div class="agent-count">7 tasks</div>
-    </div>
-    <div class="task-list">
-
-      <div class="card janine-card">
-        <div class="subagent-badge badge-janine">SUBAGENT</div>
-        <span class="card-label lbl-assets">Shop Drawing</span>
-        <h3>Shop Drawing QC Check</h3>
-        <p>Run drawing through QC checker, score Pass / Warning / Critical / Manual.</p>
-        <div class="card-footer">
-          <div class="agent-chip">📋 Janine</div>
-          <span class="trigger-chip">On submission</span>
-        </div>
-      </div>
-
-      <div class="card janine-card">
-        <div class="subagent-badge badge-janine">SUBAGENT</div>
-        <span class="card-label lbl-project">Airtable</span>
-        <h3>5-Day No-Action Nudge</h3>
-        <p>Check Custom Reminder Date → send Slack update request if overdue.</p>
-        <div class="card-footer">
-          <div class="agent-chip">📋 Janine</div>
-          <span class="trigger-chip">Scheduled</span>
-        </div>
-      </div>
-
-      <div class="card janine-card">
-        <div class="subagent-badge badge-janine">SUBAGENT</div>
-        <span class="card-label lbl-comms">Notes</span>
-        <h3>Approval Notes &amp; Submissions</h3>
-        <p>Logs drawing approvals to Notes Log with PDF, render link, and Slack notification.</p>
-        <div class="card-footer">
-          <div class="agent-chip">📋 Janine</div>
-          <span class="trigger-chip">Post-approval</span>
-        </div>
-      </div>
-
-      <div class="card janine-card">
-        <div class="subagent-badge badge-janine">SUBAGENT</div>
-        <span class="card-label lbl-data">Airtable</span>
-        <h3>BOL Airtable Input</h3>
-        <p>Parse Bill of Lading PDF and enter shipping data into Airtable records.</p>
-        <div class="card-footer">
-          <div class="agent-chip">📋 Janine</div>
-          <span class="trigger-chip">On BOL receipt</span>
-        </div>
-      </div>
-
-      <div class="card janine-card">
-        <div class="subagent-badge badge-janine">SUBAGENT</div>
-        <span class="card-label lbl-project">Airtable</span>
-        <h3>Archive SPEC DA Channel</h3>
-        <p>Move project to archive phase, update Airtable, archive Slack channel.</p>
-        <div class="card-footer">
-          <div class="agent-chip">📋 Janine</div>
-          <span class="trigger-chip">On request</span>
-        </div>
-      </div>
-
-      <div class="card janine-card">
-        <div class="subagent-badge badge-janine">SUBAGENT</div>
-        <span class="card-label lbl-shipping">Shipping</span>
-        <h3>Crate Dims → Shipping Record</h3>
-        <p>Takes crate dimensions from install doc and logs them to the Airtable shipping record.</p>
-        <div class="card-footer">
-          <div class="agent-chip">📋 Janine</div>
-          <span class="trigger-chip">On install doc</span>
-        </div>
-      </div>
-
-      <div class="card janine-card">
-        <div class="subagent-badge badge-janine">SUBAGENT</div>
-        <span class="card-label lbl-monitor">Docs</span>
-        <h3>Install Doc Monitoring</h3>
-        <p>Watches #install-doc for new documents, extracts crate dims, updates Airtable.</p>
-        <div class="card-footer">
-          <div class="agent-chip">📋 Janine</div>
-          <span class="trigger-chip">Ongoing</span>
         </div>
       </div>
 
