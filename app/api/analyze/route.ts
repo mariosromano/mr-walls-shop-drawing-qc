@@ -84,6 +84,36 @@ Rules:
 - Do not invent issues that are not evidenced in the document
 - For N/A checks (e.g. backlit checks on non-backlit project), omit them entirely from the response`;
 
+// Deterministic filename validator — runs before Claude to avoid hallucination
+function validateFilename(filename: string): { pass: boolean; reason: string | null } {
+  // Must start with [MM-DD-YYYY] using dashes
+  const datePattern = /^\[(\d{2})-(\d{2})-(\d{4})\]/;
+  if (!datePattern.test(filename)) {
+    const dotDate = /^\[\d{2}\.\d{2}\.\d{4}\]/.test(filename);
+    if (dotDate) {
+      return { pass: false, reason: 'Date uses dots instead of dashes (e.g. [05.12.2026]). Must be [MM-DD-YYYY].' };
+    }
+    return { pass: false, reason: 'Date bracket format missing or incorrect. Must start with [MM-DD-YYYY].' };
+  }
+
+  // Must contain "Shop Drawing"
+  if (!/Shop Drawing/i.test(filename)) {
+    return { pass: false, reason: '"Shop Drawing" text is missing from filename.' };
+  }
+
+  // Period before version is a FAIL (e.g. "Shop Drawing.V1")
+  if (/Shop Drawing\.V\d/i.test(filename)) {
+    return { pass: false, reason: 'Version separator is a period (e.g. ".V1"). Must use a space or dash (e.g. " V1" or "-V1").' };
+  }
+
+  // Must have a version number
+  if (!/ V\d+|-V\d+/i.test(filename)) {
+    return { pass: false, reason: 'Version number missing. Must include V1, V2, -V1, etc.' };
+  }
+
+  return { pass: true, reason: null };
+}
+
 // Increased timeout for large PDFs
 export const maxDuration = 120;
 
@@ -108,6 +138,12 @@ export async function POST(request: NextRequest) {
     console.log(`Processing PDF: ${filename}, Size: ${fileSizeMB.toFixed(2)}MB`);
 
     const base64 = Buffer.from(pdfBuffer).toString('base64');
+
+    // Run deterministic filename check before sending to Claude
+    const filenameValidation = validateFilename(filename || '');
+    const filenamePreCheck = filenameValidation.pass
+      ? 'FILENAME PRE-CHECK: PASS — date format and version separator are correct. Mark filename check as passed.'
+      : `FILENAME PRE-CHECK: FAIL — ${filenameValidation.reason} Mark filename check as a critical failure with this exact reason.`;
 
     let contextNote = '';
     if (projectType?.isBacklit === true) {
@@ -137,7 +173,7 @@ export async function POST(request: NextRequest) {
       },
       {
         type: 'text',
-        text: `FILENAME: ${filename || 'unknown'}\n\n${CHECKLIST_PROMPT}${contextNote ? '\n\nPROJECT CONTEXT:' + contextNote : ''}\n\nOutput ONLY the JSON object. No other text.`,
+        text: `FILENAME: ${filename || 'unknown'}\n\n${filenamePreCheck}\n\n${CHECKLIST_PROMPT}${contextNote ? '\n\nPROJECT CONTEXT:' + contextNote : ''}\n\nOutput ONLY the JSON object. No other text.`,
       },
     ];
 
