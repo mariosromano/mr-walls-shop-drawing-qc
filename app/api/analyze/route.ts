@@ -15,8 +15,8 @@ const CHECKLIST_PROMPT = `Analyze this shop drawing PDF against the following ch
 - The filename provided must match this pattern: [MM-DD-YYYY] Project Name - Shop Drawing V#.pdf
 - Example: [04-02-2026] Rosero Garage - Shop Drawing V2.pdf
 - The date MUST be in brackets using dashes in MM-DD-YYYY format (e.g. [04-02-2026]). Using dots like [05.12.2026] or malformed dates like [05.12026] are FAIL.
-- Must contain "Shop Drawing" followed by a space, dash, or period then version like V1, V2, -V1, -V2, .V1, .V2, etc. All three separators are acceptable.
-- FAIL if: the date format uses dots instead of dashes, the date is missing digits, the brackets are missing, or "Shop Drawing" or the version number are absent.
+- Must contain "Shop Drawing" followed by a space or dash then version like V1, V2, -V1, -V2, etc. A period before the version like ".V1" is FAIL.
+- FAIL if: the date format uses dots instead of dashes, the date is missing digits, the brackets are missing, the version separator is a period (e.g. ".V1"), or "Shop Drawing" or the version number are absent.
 
 ### 2. SPELLING ERRORS
 - Check ALL text on every page for misspellings
@@ -101,9 +101,14 @@ function validateFilename(filename: string): { pass: boolean; reason: string | n
     return { pass: false, reason: '"Shop Drawing" text is missing from filename.' };
   }
 
-  // Must have a version number (space, dash, or period before V# are all acceptable)
-  if (!/([ \-.])V\d+/i.test(filename)) {
-    return { pass: false, reason: 'Version number missing. Must include V1, V2, -V1, .V1, etc.' };
+  // Period before version is a FAIL (e.g. "Shop Drawing.V1")
+  if (/Shop Drawing\.V\d/i.test(filename)) {
+    return { pass: false, reason: 'Version separator is a period (e.g. ".V1"). Must use a space or dash (e.g. " V1" or "-V1").' };
+  }
+
+  // Must have a version number
+  if (!/ V\d+|-V\d+/i.test(filename)) {
+    return { pass: false, reason: 'Version number missing. Must include V1, V2, -V1, etc.' };
   }
 
   return { pass: true, reason: null };
