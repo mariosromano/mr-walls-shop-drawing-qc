@@ -30,7 +30,7 @@ export async function GET(req: NextRequest) {
 
   return NextResponse.json({
     found: true,
-    projectName: record.fields['Project Name'],
+    projectName: (record.fields['Project Name'] as string || '').trim(),
     recordId: record.id,
     renderUrl,
     hasRenderUrl: !!renderUrl,

@@ -108,7 +108,7 @@ export async function POST(req: NextRequest) {
   const slackChannelId = record.fields['Slack Channel ID'];
   if (!slackChannelId) return NextResponse.json({ error: 'No Slack channel found' }, { status: 404 });
 
-  const fullProjectName = record.fields['Project Name'];
+  const fullProjectName = (record.fields['Project Name'] as string || '').trim();
 
   // If designer provided a new render URL, save it to Airtable
   const existingRenderUrls: string[] = record.fields['Render Folder URL'] || [];
