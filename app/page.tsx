@@ -684,6 +684,7 @@ export default function ShopDrawingQC() {
                           setProjectNameOverride(e.target.value);
                           setRenderUrl(undefined);
                           setRenderUrlConfirmed(false);
+                          setNoRendersNeeded(false);
                         }}
                         onBlur={async () => {
                           if (!projectNameOverride.trim()) return;
