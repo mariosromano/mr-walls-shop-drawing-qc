@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
   // TRIM() handles stray leading/trailing spaces in Airtable field values
   const formula = encodeURIComponent(`TRIM({Project Name}) = "${projectName.trim()}"`);
   const res = await fetch(
-    `https://api.airtable.com/v0/${BASE_ID}/Projects?filterByFormula=${formula}&fields[]=Project%20Name&fields[]=Render%20Folder%20URL&fields[]=Slack%20Channel%20ID`,
+    `https://api.airtable.com/v0/${BASE_ID}/Projects?filterByFormula=${formula}&fields[]=Project%20Name&fields[]=Render%20Folder%20URL&fields[]=Slack%20Channel%20ID&fields[]=No%20Renders%20Needed`,
     { headers: { Authorization: `Bearer ${AIRTABLE_TOKEN}` } }
   );
   const data = await res.json();
@@ -27,6 +27,7 @@ export async function GET(req: NextRequest) {
 
   const renderUrls: string[] = record.fields['Render Folder URL'] || [];
   const renderUrl = renderUrls[0] || null;
+  const noRendersNeeded = record.fields['No Renders Needed'] === true;
 
   return NextResponse.json({
     found: true,
@@ -34,5 +35,6 @@ export async function GET(req: NextRequest) {
     recordId: record.id,
     renderUrl,
     hasRenderUrl: !!renderUrl,
+    noRendersNeeded,
   });
 }

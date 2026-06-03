@@ -750,22 +750,26 @@ export default function ShopDrawingQC() {
                       <p className="text-sm text-pink-400">{submitError}</p>
                     )}
                     <button
-                      disabled={(totalIssues > 0 && (!overrideIssues || hasFilenameError)) || !projectNameOverride.trim() || !designerNotes.trim() || isSubmitting || checkingProject || (renderUrl !== undefined && !renderUrlConfirmed)}
+                      disabled={(totalIssues > 0 && (!overrideIssues || hasFilenameError)) || !projectNameOverride.trim() || !designerNotes.trim() || isSubmitting || checkingProject || (!noRendersNeeded && renderUrl !== undefined && !renderUrlConfirmed)}
                       onClick={async () => {
-                        // If render URL not yet checked, check now
-                        if (renderUrl === undefined && projectNameOverride.trim()) {
+                        // If render URL not yet checked (and renders are needed), check now
+                        if (!noRendersNeeded && renderUrl === undefined && projectNameOverride.trim()) {
                           setCheckingProject(true);
                           try {
                             const checkRes = await fetch(`/api/check-project?name=${encodeURIComponent(projectNameOverride.trim())}`);
                             const checkData = await checkRes.json();
                             if (checkData.found) {
-                              setRenderUrl(checkData.renderUrl || null);
+                              if (checkData.noRendersNeeded) {
+                                setNoRendersNeeded(true);
+                              } else {
+                                setRenderUrl(checkData.renderUrl || null);
+                              }
                             } else {
                               setRenderUrl(null); // project not found → show manual URL input
                             }
                           } catch { setRenderUrl(null); }
                           setCheckingProject(false);
-                          return; // Let user confirm render URL before continuing
+                          if (!noRendersNeeded) return; // Let user confirm render URL before continuing
                         }
                         setIsSubmitting(true);
                         setSubmitError(null);
@@ -797,7 +801,7 @@ export default function ShopDrawingQC() {
                         }
                       }}
                       className={`px-8 py-3 rounded-xl font-bold text-lg flex items-center justify-center gap-2 transition-colors ${
-                        (totalIssues > 0 && (!overrideIssues || hasFilenameError)) || !projectNameOverride.trim() || !designerNotes.trim() || isSubmitting || checkingProject || (renderUrl !== undefined && !renderUrlConfirmed)
+                        (totalIssues > 0 && (!overrideIssues || hasFilenameError)) || !projectNameOverride.trim() || !designerNotes.trim() || isSubmitting || checkingProject || (!noRendersNeeded && renderUrl !== undefined && !renderUrlConfirmed)
                           ? 'bg-gray-800 text-gray-500 cursor-not-allowed'
                           : 'bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-400 hover:to-pink-400 text-black'
                       }`}
