@@ -161,6 +161,34 @@ export default function ShopDrawingQC() {
   const [noRendersNeeded, setNoRendersNeeded] = useState(false);
   const reviewerPickerRef = useRef<HTMLDivElement>(null);
 
+  // Auto-check project in Airtable whenever project name changes (debounced)
+  useEffect(() => {
+    const name = projectNameOverride.trim();
+    if (!name || step !== 'results') return;
+    setRenderUrl(undefined);
+    setRenderUrlConfirmed(false);
+    setNoRendersNeeded(false);
+    const timer = setTimeout(async () => {
+      setCheckingProject(true);
+      try {
+        const res = await fetch(`/api/check-project?name=${encodeURIComponent(name)}`);
+        const data = await res.json();
+        if (data.found) {
+          if (data.noRendersNeeded) {
+            setNoRendersNeeded(true);
+            setRenderUrl(undefined);
+          } else {
+            setRenderUrl(data.renderUrl || null);
+          }
+        } else {
+          setRenderUrl(null);
+        }
+      } catch { setRenderUrl(null); }
+      finally { setCheckingProject(false); }
+    }, 600);
+    return () => clearTimeout(timer);
+  }, [projectNameOverride, step]);
+
   // Close reviewer picker when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -682,23 +710,6 @@ export default function ShopDrawingQC() {
                         value={projectNameOverride}
                         onChange={(e) => {
                           setProjectNameOverride(e.target.value);
-                          setRenderUrl(undefined);
-                          setRenderUrlConfirmed(false);
-                          setNoRendersNeeded(false);
-                        }}
-                        onBlur={async () => {
-                          if (!projectNameOverride.trim()) return;
-                          setCheckingProject(true);
-                          try {
-                            const res = await fetch(`/api/check-project?name=${encodeURIComponent(projectNameOverride.trim())}`);
-                            const data = await res.json();
-                            if (data.found) {
-                              setRenderUrl(data.renderUrl || null);
-                            } else {
-                              setRenderUrl(null); // project not found → show manual URL input
-                            }
-                          } catch { setRenderUrl(null); }
-                          finally { setCheckingProject(false); }
                         }}
                         placeholder="e.g. 848P - Rosero Garage"
                         className="w-full px-4 py-2 rounded-lg bg-gray-800 border border-gray-700 text-white text-sm focus:outline-none focus:border-orange-500"
@@ -754,25 +765,8 @@ export default function ShopDrawingQC() {
                     <button
                       disabled={(totalIssues > 0 && (!overrideIssues || hasFilenameError)) || !projectNameOverride.trim() || !designerNotes.trim() || isSubmitting || checkingProject || (!noRendersNeeded && renderUrl !== undefined && !renderUrlConfirmed)}
                       onClick={async () => {
-                        // If render URL not yet checked (and renders are needed), check now
-                        if (!noRendersNeeded && renderUrl === undefined && projectNameOverride.trim()) {
-                          setCheckingProject(true);
-                          try {
-                            const checkRes = await fetch(`/api/check-project?name=${encodeURIComponent(projectNameOverride.trim())}`);
-                            const checkData = await checkRes.json();
-                            if (checkData.found) {
-                              if (checkData.noRendersNeeded) {
-                                setNoRendersNeeded(true);
-                              } else {
-                                setRenderUrl(checkData.renderUrl || null);
-                              }
-                            } else {
-                              setRenderUrl(null); // project not found → show manual URL input
-                            }
-                          } catch { setRenderUrl(null); }
-                          setCheckingProject(false);
-                          if (!noRendersNeeded) return; // Let user confirm render URL before continuing
-                        }
+                        // useEffect handles the project check automatically; just guard against in-flight
+                        if (checkingProject) return;
                         setIsSubmitting(true);
                         setSubmitError(null);
                         try {
