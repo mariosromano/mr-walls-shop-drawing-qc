@@ -158,6 +158,7 @@ export default function ShopDrawingQC() {
   const [newRenderUrl, setNewRenderUrl] = useState('');
   const [checkingProject, setCheckingProject] = useState(false);
   const [overrideIssues, setOverrideIssues] = useState(false);
+  const [noRendersNeeded, setNoRendersNeeded] = useState(false);
   const reviewerPickerRef = useRef<HTMLDivElement>(null);
 
   // Close reviewer picker when clicking outside
