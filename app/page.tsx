@@ -322,7 +322,7 @@ export default function ShopDrawingQC() {
 
       const data = await analyzeResponse.json();
       setResults(data.results);
-      setProjectNameOverride(data.results?.extractedInfo?.projectName || '');
+      setProjectNameOverride('');
       setPdfBlobUrl(blob.url);
       setProgress(100);
       setStep('results');
@@ -573,9 +573,9 @@ export default function ShopDrawingQC() {
             </button>
             <button
               onClick={runAnalysis}
-              disabled={!allAnswered}
+              disabled={!allAnswered || !designerNotes.trim()}
               className={`flex-1 py-4 font-bold text-lg rounded-xl transition-colors flex items-center justify-center gap-2 ${
-                allAnswered
+                allAnswered && designerNotes.trim()
                   ? 'bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-400 hover:to-pink-400 text-black'
                   : 'bg-gray-800 text-gray-500 cursor-not-allowed'
               }`}
