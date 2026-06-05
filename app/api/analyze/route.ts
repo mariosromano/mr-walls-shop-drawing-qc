@@ -20,7 +20,8 @@ const CHECKLIST_PROMPT = `Analyze this shop drawing PDF against the following ch
 
 ### 2. SPELLING ERRORS
 - Check ALL text on every page for misspellings
-- Known common typos: "Existig"→"Existing", "supllying"→"supplying", "exisitng"→"existing", "Bakclight"→"Backlight", "removility"→"removability", "seperate"→"separate"
+- Known common typos to watch for (flag ONLY the misspelled version, never the correct one): "Existig"→"Existing", "supllying"→"supplying", "exisitng"→"existing", "Bakclight"→"Backlight", "removility"→"removability", "seperate"→"separate"
+- IMPORTANT: The word "separate" (correctly spelled) is NOT a spelling error. Only flag "seperate" (missing the first 'a').
 - FAIL if any spelling error is found. List each error with the incorrect word, correct word, and page number.
 
 ### 3. TBD/PLACEHOLDER TEXT
