@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
+// pdf-parse imported via require to avoid Next.js App Router static analysis issues
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const pdfParse = require('pdf-parse/lib/pdf-parse.js');
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -85,6 +88,59 @@ Rules:
 - Do not invent issues that are not evidenced in the document
 - For N/A checks (e.g. backlit checks on non-backlit project), omit them entirely from the response`;
 
+// Known typos: lowercase key → correct display form
+const KNOWN_TYPOS: Record<string, string> = {
+  existig: 'Existing',
+  supllying: 'supplying',
+  exisitng: 'existing',
+  bakclight: 'Backlight',
+  removility: 'removability',
+  seperate: 'separate',
+};
+
+interface SpellingError {
+  misspelled: string;
+  correct: string;
+  page: number;
+}
+
+// Deterministic spelling checker — runs before Claude to avoid hallucination.
+// Extracts raw text from each page and searches for known typos.
+// Returns extractionFailed=true if pdf-parse can't read the file; caller falls back to Claude.
+async function checkSpellingDeterministic(
+  pdfBuffer: ArrayBuffer
+): Promise<{ pass: boolean; errors: SpellingError[]; extractionFailed: boolean }> {
+  try {
+    const buffer = Buffer.from(pdfBuffer);
+    const pageTexts: string[] = [];
+
+    await pdfParse(buffer, {
+      // Called once per page; accumulate text in order
+      pagerender: (pageData: { getTextContent: () => Promise<{ items: { str: string }[] }> }) =>
+        pageData.getTextContent().then((tc) => {
+          pageTexts.push(tc.items.map((i) => i.str).join(' '));
+          return '';
+        }),
+    });
+
+    const errors: SpellingError[] = [];
+    pageTexts.forEach((text, idx) => {
+      // Split on whitespace and strip non-alpha characters for comparison
+      text.split(/\s+/).forEach((raw) => {
+        const clean = raw.replace(/[^a-zA-Z]/g, '').toLowerCase();
+        if (KNOWN_TYPOS[clean]) {
+          errors.push({ misspelled: raw, correct: KNOWN_TYPOS[clean], page: idx + 1 });
+        }
+      });
+    });
+
+    return { pass: errors.length === 0, errors, extractionFailed: false };
+  } catch (err) {
+    console.warn('[spelling-precheck] PDF text extraction failed, falling back to Claude:', err);
+    return { pass: true, errors: [], extractionFailed: true };
+  }
+}
+
 // Deterministic filename validator — runs before Claude to avoid hallucination
 function validateFilename(filename: string): { pass: boolean; reason: string | null } {
   // Must start with [MM-DD-YYYY] using dashes
@@ -141,6 +197,20 @@ export async function POST(request: NextRequest) {
       ? 'FILENAME PRE-CHECK: PASS — date format and version separator are correct. Mark filename check as passed.'
       : `FILENAME PRE-CHECK: FAIL — ${filenameValidation.reason} Mark filename check as a critical failure with this exact reason.`;
 
+    // Run deterministic spelling check before sending to Claude
+    const spellingCheck = await checkSpellingDeterministic(pdfBuffer);
+    let spellingPreCheck: string;
+    if (spellingCheck.extractionFailed) {
+      spellingPreCheck = 'SPELLING PRE-CHECK: EXTRACTION FAILED — Claude must perform the spelling check manually using the checklist rules.';
+    } else if (spellingCheck.pass) {
+      spellingPreCheck = 'SPELLING PRE-CHECK: PASS — text was extracted from the PDF and no known typos were found. Mark the spelling check as passed. Do NOT flag any spelling errors.';
+    } else {
+      const errorList = spellingCheck.errors
+        .map((e) => `Found '${e.misspelled}' instead of '${e.correct}' on page ${e.page}`)
+        .join('; ');
+      spellingPreCheck = `SPELLING PRE-CHECK: FAIL — deterministic text extraction found the following errors: ${errorList}. Mark the spelling check as a critical failure listing exactly these errors.`;
+    }
+
     let contextNote = '';
     if (projectType?.isBacklit === true) {
       contextNote += ' BACKLIT: YES — apply all backlit requirement checks.';
@@ -169,7 +239,7 @@ export async function POST(request: NextRequest) {
       },
       {
         type: 'text',
-        text: `FILENAME: ${filename || 'unknown'}\n\n${filenamePreCheck}\n\n${CHECKLIST_PROMPT}${contextNote ? '\n\nPROJECT CONTEXT:' + contextNote : ''}\n\nOutput ONLY the JSON object. No other text.`,
+        text: `FILENAME: ${filename || 'unknown'}\n\n${filenamePreCheck}\n\n${spellingPreCheck}\n\n${CHECKLIST_PROMPT}${contextNote ? '\n\nPROJECT CONTEXT:' + contextNote : ''}\n\nOutput ONLY the JSON object. No other text.`,
       },
     ];
 
