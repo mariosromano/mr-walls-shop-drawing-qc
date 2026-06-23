@@ -20,6 +20,9 @@ const CHECKLIST_PROMPT = `Analyze this shop drawing PDF against the following ch
 - The date MUST be in brackets using dashes in MM-DD-YYYY format (e.g. [04-02-2026]). Using dots like [05.12.2026] or malformed dates like [05.12026] are FAIL.
 - Must contain "Shop Drawing" followed by " - " (space-dash-space) then version like V1, V2, etc. Example: "Shop Drawing - V1". Any other separator (dash without spaces, period, space only) is FAIL.
 - FAIL if: the date format uses dots instead of dashes, the date is missing digits, the brackets are missing, the version separator is not " - " (space-dash-space), or "Shop Drawing" or the version number are absent.
+- IMPORTANT: This check evaluates ONLY the filename string — do NOT compare the filename date to any date shown inside the drawing body. They are independent.
+- IMPORTANT: The current year is 2026. Dates in 2025 or 2026 are valid and must NOT be flagged as future dates or errors. Do not flag any date as a "future year" unless it is 2027 or later.
+- IMPORTANT: The FILENAME PRE-CHECK result injected above this checklist is FINAL. If the pre-check says PASS, you MUST mark this check as passed — do not re-evaluate or override it for any reason.
 
 ### 2. SPELLING ERRORS
 - Check ALL text on every page for misspellings
@@ -194,8 +197,8 @@ export async function POST(request: NextRequest) {
     // Run deterministic filename check before sending to Claude
     const filenameValidation = validateFilename(filename || '');
     const filenamePreCheck = filenameValidation.pass
-      ? 'FILENAME PRE-CHECK: PASS — date format and version separator are correct. Mark filename check as passed.'
-      : `FILENAME PRE-CHECK: FAIL — ${filenameValidation.reason} Mark filename check as a critical failure with this exact reason.`;
+      ? 'FILENAME PRE-CHECK RESULT (FINAL — DO NOT OVERRIDE): PASS — The deterministic validator has confirmed the filename date format and version separator are correct. You MUST mark the filename check as passed. Do not re-analyze the filename, do not compare it to dates inside the drawing, and do not flag it as a future year or any other issue. This result is authoritative and final.'
+      : `FILENAME PRE-CHECK RESULT (FINAL — DO NOT OVERRIDE): FAIL — ${filenameValidation.reason} You MUST mark the filename check as a critical failure with exactly this reason and no other. Do not modify or expand this finding.`;
 
     // Run deterministic spelling check before sending to Claude
     const spellingCheck = await checkSpellingDeterministic(pdfBuffer);
