@@ -196,7 +196,7 @@ export async function POST(req: NextRequest) {
     { type: 'divider' },
     {
       type: 'section',
-      text: { type: 'mrkdwn', text: (filePermalink ? `📎 <${filePermalink}|${filename}> — r` : 'R') + 'eply with `APPROVE` to approve or `REVISE:` followed by your notes to request changes.' },
+      text: { type: 'mrkdwn', text: 'Reply with `APPROVE` to approve or `REVISE:` followed by your notes to request changes.' },
     },
     {
       type: 'context',
