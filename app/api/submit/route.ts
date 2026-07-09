@@ -78,14 +78,13 @@ async function prepareSlackUpload(pdfUrl: string, filename: string): Promise<{fi
   } catch { return null; }
 }
 
-// Step 2: Complete the upload into a specific thread so the file appears
-// as a thread reply (not a standalone channel message).
-async function completeUploadInThread(channelId: string, threadTs: string, fileId: string, filename: string): Promise<string | null> {
+// Step 2: Complete the upload into the channel (no thread_ts) so the file
+// appears attached to the notification message, not buried in a thread.
+async function completeUploadInChannel(channelId: string, fileId: string, filename: string): Promise<string | null> {
   try {
     const completeRes = await slackPost('files.completeUploadExternal', {
       files: [{ id: fileId, title: filename }],
       channel_id: channelId,
-      thread_ts: threadTs,
     });
     return completeRes.files?.[0]?.permalink || null;
   } catch { return null; }
@@ -140,9 +139,14 @@ export async function POST(req: NextRequest) {
   const now = nowDate.toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' });
   const nowTime = nowDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Los_Angeles' });
 
-  // 2. Prepare PDF upload (bytes uploaded but NOT yet completed — avoids auto-posting to channel)
-  let pendingUpload: {fileId: string} | null = null;
-  if (pdfBlobUrl) pendingUpload = await prepareSlackUpload(pdfBlobUrl, filename);
+  // 2. Prepare + complete PDF upload to channel so it appears with the notification
+  let filePermalink: string | null = null;
+  if (pdfBlobUrl) {
+    const pendingUpload = await prepareSlackUpload(pdfBlobUrl, filename);
+    if (pendingUpload) {
+      filePermalink = await completeUploadInChannel(slackChannelId, pendingUpload.fileId, filename);
+    }
+  }
 
   // 3. Update canvas (file permalink added after message post)
   const canvasId = await getOrCreateCanvas(slackChannelId);
@@ -192,7 +196,7 @@ export async function POST(req: NextRequest) {
     { type: 'divider' },
     {
       type: 'section',
-      text: { type: 'mrkdwn', text: 'PDF attached in this thread 👇 — reply with `APPROVE` to approve or `REVISE:` followed by your notes to request changes.' },
+      text: { type: 'mrkdwn', text: (filePermalink ? `📎 <${filePermalink}|${filename}> — r` : 'R') + 'eply with `APPROVE` to approve or `REVISE:` followed by your notes to request changes.' },
     },
     {
       type: 'context',
@@ -207,11 +211,7 @@ export async function POST(req: NextRequest) {
   });
   const messageTs = msgRes.ts;
 
-  // 4b. Now complete the PDF upload INTO the thread (file appears as thread reply, not a new channel message)
-  let filePermalink: string | null = null;
-  if (pendingUpload && messageTs) {
-    filePermalink = await completeUploadInThread(slackChannelId, messageTs, pendingUpload.fileId, filename);
-  }
+  // 4b. File was already uploaded to channel in step 2 — nothing to do here.
 
   // 5. Save to SD Reviews table
   await fetch(`https://api.airtable.com/v0/${BASE_ID}/${SD_REVIEWS_TABLE}`, {
