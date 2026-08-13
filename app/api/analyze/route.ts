@@ -51,7 +51,7 @@ const CHECKLIST_PROMPT = `Analyze this shop drawing PDF against the following ch
 - Scales consistent across similar details on same page: PASS/FAIL
 
 ### 6. BACKLIT REQUIREMENTS (apply ONLY if the user indicated this is a backlit project — do NOT auto-detect):
-- 3" LED gap note present — any note indicating a required 3" gap for LED light diffusion (exact wording varies, e.g. "REQUIRED 3\" gap for light diffusion" or "needs 3\" gap for LED diffusion"): PASS/FAIL
+- 3" LED gap note present — any note indicating a required 3" gap for LED light diffusion (exact wording varies, e.g. "REQUIRED 3\\" gap for light diffusion" or "needs 3\\" gap for LED diffusion"): PASS/FAIL
 - LED access method shown — either a 3" gap OR a removable/access panel for LED maintenance: PASS/FAIL
 - Removable panel or LED access note present — any note indicating panels are removable or provide access for LED maintenance (e.g. "removable panel on left and right side for LED access", "removable for LED access", "access panel", "glued with silicone for removability"): PASS/FAIL
 - Install diagrams note present — any note indicating that install/framing diagrams will be provided after shop drawing approval (exact wording varies, e.g. "install diagrams will be provided following shop drawing approval"): PASS/FAIL
@@ -289,6 +289,65 @@ export async function POST(request: NextRequest) {
     if (!results) {
       throw new Error(`Could not parse JSON from Claude response.`);
     }
+
+    // ── Post-process: enforce deterministic pre-check results ─────────────────
+    // Claude sometimes overrides pre-check instructions. Strip any filename/spelling
+    // entries Claude produced and replace with the authoritative deterministic results.
+
+    // Filename enforcement
+    const filenameEntry = {
+      id: 'filename',
+      label: 'PDF Filename Format',
+      status: filenameValidation.pass ? 'pass' : 'fail',
+      notes: filenameValidation.pass
+        ? 'Filename format verified: date brackets, "Shop Drawing" text, and version separator are all correct.'
+        : filenameValidation.reason || 'Filename format is incorrect.',
+    };
+    results.criticalIssues = (results.criticalIssues || []).filter((i: { id: string }) => i.id !== 'filename');
+    results.warnings = (results.warnings || []).filter((i: { id: string }) => i.id !== 'filename');
+    results.passed = (results.passed || []).filter((i: { id: string }) => i.id !== 'filename');
+    if (filenameValidation.pass) {
+      results.passed.unshift(filenameEntry);
+    } else {
+      results.criticalIssues.unshift(filenameEntry);
+    }
+
+    // Spelling enforcement (only when extraction succeeded — Claude handles it otherwise)
+    if (!spellingCheck.extractionFailed) {
+      const spellingEntry = spellingCheck.pass
+        ? {
+            id: 'spelling',
+            label: 'Spelling Errors',
+            status: 'pass',
+            notes: 'No known spelling errors found.',
+          }
+        : {
+            id: 'spelling',
+            label: 'Spelling Errors',
+            status: 'fail',
+            notes: spellingCheck.errors
+              .map((e) => `'${e.misspelled}' should be '${e.correct}' (page ${e.page})`)
+              .join('; '),
+          };
+      results.criticalIssues = (results.criticalIssues || []).filter((i: { id: string }) => i.id !== 'spelling');
+      results.warnings = (results.warnings || []).filter((i: { id: string }) => i.id !== 'spelling');
+      results.passed = (results.passed || []).filter((i: { id: string }) => i.id !== 'spelling');
+      if (spellingCheck.pass) {
+        results.passed.unshift(spellingEntry);
+      } else {
+        results.criticalIssues.unshift(spellingEntry);
+      }
+    }
+
+    // Recalculate overallStatus based on final arrays
+    if ((results.criticalIssues || []).length > 0) {
+      results.overallStatus = 'fail';
+    } else if ((results.warnings || []).length > 0) {
+      results.overallStatus = 'warning';
+    } else {
+      results.overallStatus = 'pass';
+    }
+    // ─────────────────────────────────────────────────────────────────────────
 
     return NextResponse.json({
       success: true,
